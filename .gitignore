@@ -1,0 +1,11 @@
+# Large audio test files
+test_wavs/
+
+# MATLAB generated artifacts (reproducible from scripts)
+x2000_deploy_v2/golden/
+
+# OS / editor files
+Thumbs.db
+*.swp
+*.swo
+*~
