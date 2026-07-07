@@ -1181,11 +1181,14 @@ void ctfa_fa_fp(
     int nseg = W_pad / ngrp;  /* must be integer */
 
     /* Use VLAs sized by actual nseg (W+pad)/4, max=33 for W=129 */
-    /* Reshape: x_t = reshape(x_pad, [ngrp, nseg])' → [nseg, ngrp] */
+    /* Reshape: x_t = reshape(x_pad, [ngrp, nseg])' → [nseg, ngrp]
+     * MATLAB: A=reshape(x_pad,[ngrp,nseg]) → A(grp,seg)=x_pad[grp+ngrp*seg]
+     *         B=A' → B(seg,grp)=A(grp,seg)=x_pad[grp+ngrp*seg]
+     * C: x_re[seg*ngrp+grp] = x_agg_q20[grp + ngrp*seg] */
     int32_t *x_re = (int32_t*)malloc(nseg * ngrp * sizeof(int32_t));
     for (int seg = 0; seg < nseg; seg++) {
         for (int grp = 0; grp < ngrp; grp++) {
-            x_re[seg * ngrp + grp] = x_agg_q20[grp * nseg + seg];
+            x_re[seg * ngrp + grp] = x_agg_q20[grp + ngrp * seg];
         }
     }
 
@@ -1201,12 +1204,15 @@ void ctfa_fa_fp(
     int32_t *x_fc = (int32_t*)malloc(nseg * ngrp * sizeof(int32_t));
     fc_fp_s16(y_gru, nseg, total_hid, ngrp, fc_weight, fc_bias, -9, x_fc);
 
-    /* Step 6: Reshape back to [1, W_pad] and remove padding */
-    /* x_fc is [nseg, ngrp] → reshape to [1, ngrp*nseg] = [1, W_pad] */
+    /* Step 6: Reshape back to [1, W_pad] and remove padding
+     * MATLAB: x_fc_T = x_fc.' → [ngrp, nseg]
+     *         x_shape = reshape(x_fc_T, 1, []) → column-major flatten
+     *         x_shape[grp + ngrp*seg] = x_fc[seg*ngrp + grp]
+     * C: x_shape[grp + ngrp*seg] = x_fc[seg * ngrp + grp] */
     int32_t *x_shape = (int32_t*)malloc(W_pad * sizeof(int32_t));
     for (int seg = 0; seg < nseg; seg++) {
         for (int grp = 0; grp < ngrp; grp++) {
-            x_shape[grp * nseg + seg] = x_fc[seg * ngrp + grp];
+            x_shape[grp + ngrp * seg] = x_fc[seg * ngrp + grp];
         }
     }
 
