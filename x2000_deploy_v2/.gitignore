@@ -1,0 +1,14 @@
+build/
+*.o
+*.a
+golden/
+diag_e0/
+test_*.c
+test_diag*
+test_aff*
+test_bn*
+test_conv*
+test_ctfa*
+test_e0*
+test_trace*
+test_xconv*

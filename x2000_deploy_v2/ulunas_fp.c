@@ -13,52 +13,54 @@
 
 /* ── conv2d_fp (rewrite) ───────────────────────────────────────────────── */
 
-/* Internal helper: single-channel conv2d with explicit padding */
+/* Internal helper: single-channel conv2d with MATLAB column-major weight indexing.
+ * weight is 4D [Cout, Cin, Kh, Kw] stored in MATLAB column-major order.
+ * Access: weight(nOut,nIn,kh,kw) → nOut + Cout*nIn + Cout*Cin*kh + Cout*Cin*Kh*kw
+ */
 static void conv2d_chan_fp(
     const int32_t *x_chan, int H, int W,
-    int Cout, int nOut, int Hout, int Wout,
+    int Cout, int Cin, int nOut, int nIn,
+    int Hout, int Wout,
     int Kh, int Kw, int stride_h, int stride_w,
     int pad_top, int pad_left,
-    const int16_t *kernel_chan, /* [Kh, Kw] */
+    const int16_t *weight, /* full 4D weight [Cout,Cin,Kh,Kw] col-major */
     int Qr,
     int32_t *y_chan)
 {
     int h_id, w_id, kh, kw;
     int32_t round_const = (int32_t)(1LL << ((-Qr) - 1));
-    int i;
+    int CoutCin = Cout * Cin;
+    int CoutCinKh = CoutCin * Kh;
 
-    for (i = 0; i < Hout * Wout; i++) y_chan[i] = 0;
+    for (int i = 0; i < Hout * Wout; i++) y_chan[i] = 0;
 
     for (h_id = 1; h_id <= Hout; h_id++) {
-        int h_start = (h_id - 1) * stride_h + 1;  /* 1-based in MATLAB */
+        int h_start = (h_id - 1) * stride_h + 1;
         for (w_id = 1; w_id <= Wout; w_id++) {
             int w_start = (w_id - 1) * stride_w + 1;
             int32_t acc = 0;
 
-            for (kh = 1; kh <= Kh; kh++) {
-                int h_src = h_start + (kh - 1) - pad_top;  /* convert to 1-based source */
-                for (kw = 1; kw <= Kw; kw++) {
-                    int w_src = w_start + (kw - 1) - pad_left;
+            for (kh = 0; kh < Kh; kh++) {
+                int h_src = h_start + kh - pad_top;
+                for (kw = 0; kw < Kw; kw++) {
+                    int w_src = w_start + kw - pad_left;
                     int32_t x_val;
 
-                    /* Check if within padded bounds */
                     if (h_src >= 1 && h_src <= H && w_src >= 1 && w_src <= W) {
-                        /* Valid data region */
                         x_val = x_chan[(h_src - 1) * W + (w_src - 1)];
                     } else {
-                        x_val = 0;  /* Zero padding */
+                        x_val = 0;
                     }
 
-                    int16_t w_val = kernel_chan[(kh - 1) * Kw + (kw - 1)];
-                    /* MATLAB: round(x_val * w_val * 2^Qr) */
+                    /* MATLAB column-major weight access:
+                     * weight(nOut,nIn,kh,kw) → nOut + Cout*nIn + Cout*Cin*kh + Cout*Cin*Kh*kw */
+                    int widx = nOut + Cout * nIn + CoutCin * kh + CoutCinKh * kw;
+                    int16_t w_val = weight[widx];
                     int64_t prod = (int64_t)x_val * (int64_t)w_val;
                     int32_t rounded;
                     if (Qr < 0) {
-                        /* 2^Qr where Qr is negative → right shift */
-                        /* round(x * w * 2^Qr) = round((x*w) / 2^(-Qr)) */
                         rounded = (int32_t)((prod + (int64_t)round_const) >> (-Qr));
                     } else {
-                        /* Qr positive → left shift */
                         rounded = (int32_t)(prod << Qr);
                     }
                     acc += rounded;
@@ -96,12 +98,12 @@ void conv2d_fp(
 
         for (nIn = 0; nIn < Cin; nIn++) {
             const int32_t *x_chan = &x[nIn * H * W];
-            const int16_t *kernel = &weight[((nOut * Cin + nIn) * Kh * Kw)];
             int32_t conv_result[Hout * Wout];
 
-            conv2d_chan_fp(x_chan, H, W, Cout, nOut,
+            conv2d_chan_fp(x_chan, H, W,
+                           Cout, Cin, nOut, nIn,
                            Hout, Wout, Kh, Kw, stride_h, stride_w,
-                           pad_top, pad_left, kernel, Qr, conv_result);
+                           pad_top, pad_left, weight, Qr, conv_result);
 
             /* Accumulate */
             for (int i = 0; i < Hout * Wout; i++) {
@@ -141,8 +143,8 @@ void pconv2d_fp(
         }
 
         for (nIn = 0; nIn < Cin; nIn++) {
-            /* Weight is [Cout, Cin, 1, 1] → weight[nOut*Cin+nIn] */
-            int16_t w_val = weight[nOut * Cin + nIn];
+            /* Weight is [Cout, Cin] in MATLAB column-major: weight(nOut,nIn) → nOut + Cout*nIn */
+            int16_t w_val = weight[nOut + Cout * nIn];
             const int32_t *x_chan = &x[nIn * Wout]; /* [1, Wout] */
 
             for (w = 0; w < Wout; w++) {
@@ -559,13 +561,14 @@ void non_gtconv2d_fp(
 void bn_fp(
     const int32_t *x, int C, int W,
     const int16_t *weight, const int32_t *bias,
-    const int32_t *running_mean, const int16_t *running_var,
+    const int32_t *running_mean, const uint16_t *running_var,
     int Qr1, int Qr2,
     int32_t *y)
 {
     /* BN params (weight/bias/mean/var) are per-channel (C elements).
      * Broadcast across W: element i → channel c = i / W, param index = c.
-     * running_var: uses int16_t (may be signed in headers but values always ≥0) */
+     * running_var: uint16_t — some values > 32767 (e.g., 37326 for E0 ch1),
+     * so MUST cast through unsigned to avoid sign-extension. */
     int N = C * W;
     int32_t round1 = (int32_t)(1LL << ((-Qr1) - 1));
     int32_t round2 = (int32_t)(1LL << ((-Qr2) - 1));
@@ -574,7 +577,7 @@ void bn_fp(
     for (i = 0; i < N; i++) {
         int c = i / W;
         int64_t diff = (int64_t)x[i] - (int64_t)running_mean[c];
-        int64_t norm = diff * (int64_t)(int16_t)running_var[c];
+        int64_t norm = diff * (int64_t)(uint32_t)running_var[c];
         int32_t x_norm = (int32_t)((norm + (int64_t)round1) >> (-Qr1));
 
         int64_t scaled = (int64_t)x_norm * (int64_t)weight[c];
@@ -667,10 +670,12 @@ void affineprelu_fp(
                 x_val = (int32_t)((prod + (int64_t)round1) >> (-Qr1));
             }
 
-            /* Affine + residual: y = round(x_copy * weight * 2^(Qr2)) + bias + x_new */
-            int64_t aff = (int64_t)x[idx] * (int64_t)weight[c]; /* x_copy = original x */
+            /* Affine + residual. weight/bias are [C,W] in MATLAB column-major:
+             * weight(c,w) → c + C*w. slope is per-channel [C]. */
+            int w_idx = c + C * w;  /* MATLAB column-major index */
+            int64_t aff = (int64_t)x[idx] * (int64_t)weight[w_idx];
             int32_t aff_r = (int32_t)((aff + (int64_t)round2) >> (-Qr2));
-            y[idx] = aff_r + bias[c] + x_val;
+            y[idx] = aff_r + bias[w_idx] + x_val;
         }
     }
     (void)N; /* used for potential optimization */
