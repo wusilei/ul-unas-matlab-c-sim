@@ -475,11 +475,11 @@ void d4_xconv(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int
 
 void encoder_module(
     const int32_t *x,
-    int32_t *conv_cache_e0, int16_t *tfa_cache_e0,
-    int32_t *conv_cache_e1, int16_t *tfa_cache_e1,
-    int32_t *conv_cache_e2, int16_t *tfa_cache_e2,
-    int16_t *tfa_cache_e3,
-    int16_t *tfa_cache_e4,
+    int32_t *conv_cache_e0, int32_t *tfa_cache_e0,
+    int32_t *conv_cache_e1, int32_t *tfa_cache_e1,
+    int32_t *conv_cache_e2, int32_t *tfa_cache_e2,
+    int32_t *tfa_cache_e3,
+    int32_t *tfa_cache_e4,
     int32_t *y_e0, int32_t *y_e1, int32_t *y_e2,
     int32_t *y_e3, int32_t *y_e4)
 {
@@ -498,10 +498,10 @@ void decoder_module(
     const int32_t *x,
     const int32_t *skip_e4, const int32_t *skip_e3,
     const int32_t *skip_e2, const int32_t *skip_e1, const int32_t *skip_e0,
-    int16_t *tfa_cache_d0, int16_t *tfa_cache_d1,
-    int32_t *conv_cache_d0, int16_t *tfa_cache_d2,
-    int32_t *conv_cache_d1, int16_t *tfa_cache_d3,
-    int32_t *conv_cache_d2, int16_t *tfa_cache_d4,
+    int32_t *tfa_cache_d0, int32_t *tfa_cache_d1,
+    int32_t *conv_cache_d0, int32_t *tfa_cache_d2,
+    int32_t *conv_cache_d1, int32_t *tfa_cache_d3,
+    int32_t *conv_cache_d2, int32_t *tfa_cache_d4,
     int32_t *y)
 {
     int32_t y_d0[32*33], y_d1[24*33], y_d2[24*33], y_d3[12*65];
@@ -517,7 +517,7 @@ void decoder_module(
 /* ======================================================================== */
 
 void gdprnn_module(
-    const int32_t *x, int16_t *inter_cache, int gdprnn_idx, int32_t *y)
+    const int32_t *x, int32_t *inter_cache, int gdprnn_idx, int32_t *y)
 {
     int32_t x_t[33*16];
     for(int t=0;t<33;t++) for(int c=0;c<16;c++) x_t[t*16+c]=x[c*33+t];

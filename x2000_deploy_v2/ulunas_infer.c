@@ -12,17 +12,17 @@
 /* External references to encoder/decoder/gdprnn module functions */
 extern void encoder_module(
     const int32_t *x,
-    int32_t *conv_cache_e0, int16_t *tfa_cache_e0,
-    int32_t *conv_cache_e1, int16_t *tfa_cache_e1,
-    int32_t *conv_cache_e2, int16_t *tfa_cache_e2,
-    int16_t *tfa_cache_e3,
-    int16_t *tfa_cache_e4,
+    int32_t *conv_cache_e0, int32_t *tfa_cache_e0,
+    int32_t *conv_cache_e1, int32_t *tfa_cache_e1,
+    int32_t *conv_cache_e2, int32_t *tfa_cache_e2,
+    int32_t *tfa_cache_e3,
+    int32_t *tfa_cache_e4,
     int32_t *y_e0, int32_t *y_e1, int32_t *y_e2,
     int32_t *y_e3, int32_t *y_e4);
 
 extern void gdprnn_module(
     const int32_t *x,
-    int16_t *inter_cache,
+    int32_t *inter_cache,
     int gdprnn_idx,
     int32_t *y);
 
@@ -30,10 +30,10 @@ extern void decoder_module(
     const int32_t *x,
     const int32_t *skip_e4, const int32_t *skip_e3,
     const int32_t *skip_e2, const int32_t *skip_e1, const int32_t *skip_e0,
-    int16_t *tfa_cache_d0, int16_t *tfa_cache_d1,
-    int32_t *conv_cache_d0, int16_t *tfa_cache_d2,
-    int32_t *conv_cache_d1, int16_t *tfa_cache_d3,
-    int32_t *conv_cache_d2, int16_t *tfa_cache_d4,
+    int32_t *tfa_cache_d0, int32_t *tfa_cache_d1,
+    int32_t *conv_cache_d0, int32_t *tfa_cache_d2,
+    int32_t *conv_cache_d1, int32_t *tfa_cache_d3,
+    int32_t *conv_cache_d2, int32_t *tfa_cache_d4,
     int32_t *y);
 
 /* ERB weights (from para_in_mat_FP/) */
