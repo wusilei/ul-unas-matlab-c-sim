@@ -31,8 +31,8 @@ sigmoid_lut_q15 = uint16(max(0, min(65535, sigmoid_lut_q15)));
 %% ====================================================================== %
 %% 2. Tanh LUT: int32_t Q20 → int16_t Q15
 %% ====================================================================== %
-x_min = -4;
-x_max =  4;
+x_min = -8;
+x_max =  8;
 x_step = (x_max - x_min) / (TANH_LUT_SIZE - 1);
 
 tanh_lut_q15 = zeros(1, TANH_LUT_SIZE);
@@ -80,8 +80,8 @@ fprintf(fid_h, '#define TANH_LUT_SIZE %d\n', TANH_LUT_SIZE);
 fprintf(fid_h, '#define LOG10_LUT_SIZE %d\n', LOG10_LUT_SIZE);
 fprintf(fid_h, '#define SIGMOID_LUT_X_MIN_Q20  %d     /* -8.0 * 2^20 */\n', int32(-8*2^20));
 fprintf(fid_h, '#define SIGMOID_LUT_X_MAX_Q20  %d      /*  8.0 * 2^20 */\n', int32(8*2^20));
-fprintf(fid_h, '#define TANH_LUT_X_MIN_Q20     %d     /* -4.0 * 2^20 */\n', int32(-4*2^20));
-fprintf(fid_h, '#define TANH_LUT_X_MAX_Q20     %d      /*  4.0 * 2^20 */\n', int32(4*2^20));
+fprintf(fid_h, '#define TANH_LUT_X_MIN_Q20     %d     /* %.1f * 2^20 */\n', int32(x_min*2^20), x_min);
+fprintf(fid_h, '#define TANH_LUT_X_MAX_Q20     %d      /*  %.1f * 2^20 */\n', int32(x_max*2^20), x_max);
 fprintf(fid_h, '#define LOG10_LUT_X_MIN_Q20    %d\n', int32(x_min_q20));
 fprintf(fid_h, '#define LOG10_LUT_X_MAX_Q20    %d\n', int32(x_max_q20));
 fprintf(fid_h, '\n');
