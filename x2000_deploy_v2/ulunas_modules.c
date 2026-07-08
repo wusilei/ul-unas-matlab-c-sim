@@ -627,3 +627,17 @@ void encoder_xconv_module(
     ctfa_apply_fp(ya,E0_OUT_C,E0_OUT_W,ta,fa,y);
 }
 
+/* ===== Per-layer test wrappers ===== */
+void test_e1_xmb0(const int32_t *x, int32_t *cc, int32_t *tc, int32_t *y) {
+    e1_xmb0(x, cc, tc, y);
+}
+void test_e2_xdws0(const int32_t *x, int32_t *cc, int32_t *tc, int32_t *y) {
+    e2_xdws0(x, cc, tc, y);
+}
+void e3_xmb1_wrap(const int32_t *x, int32_t *tc, int32_t *y) {
+    e3_xmb1(x, tc, y);
+}
+void e4_xdws1_wrap(const int32_t *x, int32_t *tc, int32_t *y) {
+    e4_xdws1(x, tc, y);
+}
+

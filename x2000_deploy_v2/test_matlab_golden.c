@@ -66,10 +66,14 @@ static void rep(const char *l, met_t m) {
     else printf(" ✗\n");
 }
 
-extern void encoder_xconv_module(const int32_t*,int32_t*,int16_t*,int32_t*);
-extern void encoder_module(const int32_t*,int32_t*,int16_t*,int32_t*,int16_t*,int32_t*,int16_t*,int16_t*,int16_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*);
-extern void gdprnn_module(const int32_t*,int16_t*,int,int32_t*);
-extern void decoder_module(const int32_t*,const int32_t*,const int32_t*,const int32_t*,const int32_t*,const int32_t*,int16_t*,int16_t*,int32_t*,int16_t*,int32_t*,int16_t*,int32_t*,int16_t*,int32_t*);
+extern void encoder_xconv_module(const int32_t*,int32_t*,int32_t*,int32_t*);
+extern void encoder_module(const int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*);
+extern void gdprnn_module(const int32_t*,int32_t*,int,int32_t*);
+extern void decoder_module(const int32_t*,const int32_t*,const int32_t*,const int32_t*,const int32_t*,const int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*,int32_t*);
+extern void test_e1_xmb0(const int32_t*,int32_t*,int32_t*,int32_t*);
+extern void test_e2_xdws0(const int32_t*,int32_t*,int32_t*,int32_t*);
+extern void e3_xmb1_wrap(const int32_t*,int32_t*,int32_t*);
+extern void e4_xdws1_wrap(const int32_t*,int32_t*,int32_t*);
 extern const uint16_t erb_erb_fc_weight[], erb_ierb_fc_weight[];
 
 int main(int argc, char **argv) {
@@ -115,6 +119,57 @@ int main(int argc, char **argv) {
             rep("3. Encoder full (E0→E4)",cmp(ye4,ge4,528)); total++; if(cmp(ye4,ge4,528).snr>130)passed++;
         }
         free(gb);free(ge4);
+    }
+
+    /* ── Test 3b-3e: Encoder per-layer isolation (golden input) ── */
+    {
+        int32_t *ge0= load_i32_t(P("frame001_e0.bin"),12,65,&n);
+        int32_t *ge1= load_i32_t(P("frame001_e1.bin"),24,33,&n);
+        if(ge0&&ge1){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[792];
+            test_e1_xmb0(ge0,st.conv_cache_e1,st.tfa_cache_e1,c);
+            rep("3b.E1 iso (gold E0 in)",cmp(c,ge1,792)); total++;
+            if(cmp(c,ge1,792).snr>130)passed++;
+        }
+        free(ge0);free(ge1);
+    }
+    {
+        int32_t *ge1= load_i32_t(P("frame001_e1.bin"),24,33,&n);
+        int32_t *ge2= load_i32_t(P("frame001_e2.bin"),24,33,&n);
+        if(ge1&&ge2){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[792];
+            test_e2_xdws0(ge1,st.conv_cache_e2,st.tfa_cache_e2,c);
+            rep("3c.E2 iso (gold E1 in)",cmp(c,ge2,792)); total++;
+            if(cmp(c,ge2,792).snr>130)passed++;
+        }
+        free(ge1);free(ge2);
+    }
+    /* E3 and E4 need wrapper functions — use encoder_module partial run */
+    {
+        int32_t *ge2= load_i32_t(P("frame001_e2.bin"),24,33,&n);
+        int32_t *ge3= load_i32_t(P("frame001_e3.bin"),32,33,&n);
+        if(ge2&&ge3){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[1056];
+            e3_xmb1_wrap(ge2,st.tfa_cache_e3,c);
+            rep("3d.E3 iso (gold E2 in)",cmp(c,ge3,1056)); total++;
+            if(cmp(c,ge3,1056).snr>130)passed++;
+        }
+        free(ge2);free(ge3);
+    }
+    {
+        int32_t *ge3= load_i32_t(P("frame001_e3.bin"),32,33,&n);
+        int32_t *ge4= load_i32_t(P("frame001_e4.bin"),16,33,&n);
+        if(ge3&&ge4){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[528];
+            e4_xdws1_wrap(ge3,st.tfa_cache_e4,c);
+            rep("3e.E4 iso (gold E3 in)",cmp(c,ge4,528)); total++;
+            if(cmp(c,ge4,528).snr>130)passed++;
+        }
+        free(ge3);free(ge4);
     }
 
     /* ── Test 4: GDPRNN idx=0 ── */
