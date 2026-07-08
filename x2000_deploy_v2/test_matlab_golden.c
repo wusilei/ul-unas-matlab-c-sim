@@ -288,8 +288,15 @@ int main(int argc, char **argv) {
         int32_t *ge1 = load_i32_t(P("frame001_e1.bin"),24,33,&n);
         int32_t *ge0 = load_i32_t(P("frame001_e0.bin"),12,65,&n);
 
-        /* D0: [16,33]+skip_e4 → [32,33] */
+        /* Load golden D0-D4 — keep all valid until end of block */
         int32_t *gd0 = load_i32_t(P("frame001_d0.bin"),32,33,&n);
+        int32_t *gd1 = load_i32_t(P("frame001_d1.bin"),24,33,&n);
+        int32_t *gd2 = load_i32_t(P("frame001_d2.bin"),24,33,&n);
+        int32_t *gd3 = load_i32_t(P("frame001_d3.bin"),12,65,&n);
+        int32_t *gd4 = load_i32_t(P("frame001_d4.bin"),1,129,&n);
+        if(!gd4) gd4 = load_i32_t(P("frame001_dec.bin"),1,129,&n); /* fallback */
+
+        /* 8a: D0 iso [16,33]+skip_e4 → [32,33] */
         if(gr2 && ge4 && gd0){
             ulunas_state_t st; ulunas_state_init(&st);
             int32_t c[1056];
@@ -297,61 +304,45 @@ int main(int argc, char **argv) {
             rep("8a.D0 iso (gold rnn2+skip_e4)",cmp(c,gd0,1056)); total++;
             if(cmp(c,gd0,1056).snr>130)passed++;
         } else { printf("  8a.D0 iso — golden MISS, skip\n"); }
-        free(gd0);
 
-        /* D1: [32,33]+skip_e3 → [24,33] */
-        int32_t *gd1 = load_i32_t(P("frame001_d1.bin"),24,33,&n);
-        int32_t *gd0_in = gd0 ? gd0 : load_i32_t(P("frame001_d0.bin"),32,33,&n);
-        if(gd0_in && ge3 && gd1){
+        /* 8b: D1 iso [32,33]+skip_e3 → [24,33] */
+        if(gd0 && ge3 && gd1){
             ulunas_state_t st; ulunas_state_init(&st);
             int32_t c[792];
-            test_d1_xmb0(gd0_in, ge3, st.tfa_cache_d1, c);
+            test_d1_xmb0(gd0, ge3, st.tfa_cache_d1, c);
             rep("8b.D1 iso (gold D0+skip_e3)",cmp(c,gd1,792)); total++;
             if(cmp(c,gd1,792).snr>130)passed++;
         } else { printf("  8b.D1 iso — golden MISS, skip\n"); }
-        if(!gd0) free(gd0_in);
-        free(gd1);
 
-        /* D2: [24,33]+skip_e2 → [24,33] */
-        int32_t *gd2 = load_i32_t(P("frame001_d2.bin"),24,33,&n);
-        int32_t *gd1_in = gd1 ? gd1 : load_i32_t(P("frame001_d1.bin"),24,33,&n);
-        if(gd1_in && ge2 && gd2){
+        /* 8c: D2 iso [24,33]+skip_e2 → [24,33] */
+        if(gd1 && ge2 && gd2){
             ulunas_state_t st; ulunas_state_init(&st);
             int32_t c[792];
-            test_d2_xdws1(gd1_in, ge2, st.conv_cache_d0, st.tfa_cache_d2, c);
+            test_d2_xdws1(gd1, ge2, st.conv_cache_d0, st.tfa_cache_d2, c);
             rep("8c.D2 iso (gold D1+skip_e2)",cmp(c,gd2,792)); total++;
             if(cmp(c,gd2,792).snr>130)passed++;
         } else { printf("  8c.D2 iso — golden MISS, skip\n"); }
-        if(!gd1) free(gd1_in);
-        free(gd2);
 
-        /* D3: [24,33]+skip_e1 → [12,65] */
-        int32_t *gd3 = load_i32_t(P("frame001_d3.bin"),12,65,&n);
-        int32_t *gd2_in = gd2 ? gd2 : load_i32_t(P("frame001_d2.bin"),24,33,&n);
-        if(gd2_in && ge1 && gd3){
+        /* 8d: D3 iso [24,33]+skip_e1 → [12,65] */
+        if(gd2 && ge1 && gd3){
             ulunas_state_t st; ulunas_state_init(&st);
             int32_t c[780];
-            test_d3_xmb1(gd2_in, ge1, st.conv_cache_d1, st.tfa_cache_d3, c);
+            test_d3_xmb1(gd2, ge1, st.conv_cache_d1, st.tfa_cache_d3, c);
             rep("8d.D3 iso (gold D2+skip_e1)",cmp(c,gd3,780)); total++;
             if(cmp(c,gd3,780).snr>130)passed++;
         } else { printf("  8d.D3 iso — golden MISS, skip\n"); }
-        if(!gd2) free(gd2_in);
-        free(gd3);
 
-        /* D4: [12,65]+skip_e0 → [1,129] */
-        int32_t *gd4 = load_i32_t(P("frame001_d4.bin"),1,129,&n);
-        int32_t *gd3_in = gd3 ? gd3 : load_i32_t(P("frame001_d3.bin"),12,65,&n);
-        if(gd3_in && ge0 && gd4){
+        /* 8e: D4 iso [12,65]+skip_e0 → [1,129] */
+        if(gd3 && ge0 && gd4){
             ulunas_state_t st; ulunas_state_init(&st);
             int32_t c[129];
-            test_d4_xconv(gd3_in, ge0, st.conv_cache_d2, st.tfa_cache_d4, c);
+            test_d4_xconv(gd3, ge0, st.conv_cache_d2, st.tfa_cache_d4, c);
             rep("8e.D4 iso (gold D3+skip_e0)",cmp(c,gd4,129)); total++;
             if(cmp(c,gd4,129).snr>130)passed++;
         } else { printf("  8e.D4 iso — golden MISS, skip\n"); }
-        if(!gd3) free(gd3_in);
-        free(gd4);
 
         free(gr2);free(ge4);free(ge3);free(ge2);free(ge1);free(ge0);
+        free(gd0);free(gd1);free(gd2);free(gd3);free(gd4);
     }
 
     printf("\n=== %d/%d tests passed ===\n", passed, total);

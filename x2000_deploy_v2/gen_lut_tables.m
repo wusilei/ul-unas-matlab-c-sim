@@ -11,8 +11,8 @@ TANH_LUT_SIZE    = 1024;
 LOG10_LUT_SIZE   = 512;
 
 %% Q20 LUT config (power-of-2 range for bitwise index/frac)
-SIG_Q20_LUT_SIZE  = 4096;
-TANH_Q20_LUT_SIZE = 4096;
+SIG_Q20_LUT_SIZE  = 16384;
+TANH_Q20_LUT_SIZE = 16384;
 
 out_dir = fileparts(mfilename('fullpath'));
 

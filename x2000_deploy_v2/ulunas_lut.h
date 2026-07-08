@@ -15,12 +15,12 @@
 #define LOG10_LUT_X_MAX_Q20    8388608
 
 /* Q20 LUT (GTCRN-style bitwise index/frac, power-of-2 range) */
-#define SIG_Q20_LUT_SIZE  4096
+#define SIG_Q20_LUT_SIZE  16384
 #define SIG_Q20_MIN        -8388608
 #define SIG_Q20_MAX        8388608
 #define SIG_Q20_RANGE      16777216
 #define SIG_Q20_SHIFT      24
-#define TANH_Q20_LUT_SIZE 4096
+#define TANH_Q20_LUT_SIZE 16384
 #define TANH_Q20_MIN       -4194304
 #define TANH_Q20_MAX       4194304
 #define TANH_Q20_RANGE     8388608

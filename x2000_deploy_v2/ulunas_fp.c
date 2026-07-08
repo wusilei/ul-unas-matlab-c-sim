@@ -898,6 +898,7 @@ void bigru_sequence_fp(
 /* ── GRU single step Q20 ─────────────────────────────────────────────────
  * Q20 hidden state (int32_t) + Q20 gates + Q20 mixing → Q15 output.
  * GTCRN-style bitwise LUT lookup for sigmoid/tanh.
+ * v2: HH MAC uses full Q20 h_cache (no truncation to Q15), matching MATLAB float.
  */
 void gru_step_fp_q20(
     const int32_t *x_t, int input_dim,
@@ -909,7 +910,7 @@ void gru_step_fp_q20(
 {
     int j;
     int32_t round_ih = (int32_t)(1LL << ((-Qr1) - 1));
-    int32_t round_hh = (int32_t)(1LL << ((-Qr2) - 1));
+    int32_t round_hh5 = (int32_t)(1LL << ((-Qr2+5) - 1)); /* +5: Q20×Q12=Q32→need 5 extra shift bits */
     int32_t round_gate = (int32_t)(1LL << (20 - 1));
 
     #define IH_R(i,j) ih_weight[(i)+(j)*input_dim]
@@ -925,18 +926,18 @@ void gru_step_fp_q20(
     for (j=0;j<nHidden;j++){
         int64_t s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_R(i,j);
         int32_t ih_r=(int32_t)((s+(int64_t)round_ih)>>(-Qr1));
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_R(k,j);
-        int32_t hh_r=(int32_t)((s+(int64_t)round_hh)>>(-Qr2));
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*(int64_t)HH_R(k,j);
+        int32_t hh_r=(int32_t)((s+(int64_t)round_hh5)>>(-Qr2+5));
         r_q20[j]=sigmoid_q20_to_q20(ih_r+hh_r+ih_bias[j]+hh_bias[j]);
 
         s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_Z(i,j);
         int32_t ih_z=(int32_t)((s+(int64_t)round_ih)>>(-Qr1));
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_Z(k,j);
-        int32_t hh_z=(int32_t)((s+(int64_t)round_hh)>>(-Qr2));
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*(int64_t)HH_Z(k,j);
+        int32_t hh_z=(int32_t)((s+(int64_t)round_hh5)>>(-Qr2+5));
         z_q20[j]=sigmoid_q20_to_q20(ih_z+hh_z+ih_bias[j+nHidden]+hh_bias[j+nHidden]);
 
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_N(k,j);
-        ht_q20[j]=(int32_t)((s+(int64_t)round_hh)>>(-Qr2))+hh_bias[j+2*nHidden];
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*(int64_t)HH_N(k,j);
+        ht_q20[j]=(int32_t)((s+(int64_t)round_hh5)>>(-Qr2+5))+hh_bias[j+2*nHidden];
 
         s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_N(i,j);
         int32_t ih_n=(int32_t)((s+(int64_t)round_ih)>>(-Qr1));
