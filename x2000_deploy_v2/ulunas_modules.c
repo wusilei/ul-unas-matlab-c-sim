@@ -7,7 +7,7 @@
 /* ===== GENERIC HELPERS ===== */
 
 /* PConv grouped×2 → BN → AffinePReLU */
-static void pconv_g2_aff(
+void pconv_g2_aff(
     const int32_t *x, int Ch, int Co, int W,
     const int16_t *pw, const int32_t *pb,
     const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
@@ -26,7 +26,7 @@ static void pconv_g2_aff(
 }
 
 /* PConv grouped×2 → BN only (no AffinePReLU) */
-static void pconv_g2_bn(
+void pconv_g2_bn(
     const int32_t *x, int Ch, int Co, int W,
     const int16_t *pw, const int32_t *pb,
     const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
@@ -42,7 +42,7 @@ static void pconv_g2_bn(
 }
 
 /* GConv (cached) → BN → AffinePReLU */
-static void gconv_aff(
+void gconv_aff(
     const int32_t *x, const int32_t *cc, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
@@ -58,7 +58,7 @@ static void gconv_aff(
 }
 
 /* nonGConv → BN → AffinePReLU */
-static void ngconv_aff(
+void ngconv_aff(
     const int32_t *x, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
@@ -74,7 +74,7 @@ static void ngconv_aff(
 }
 
 /* GTConv (cached) → BN → AffinePReLU */
-static void gtconv_aff(
+void gtconv_aff(
     const int32_t *x, const int32_t *cc, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
@@ -90,7 +90,7 @@ static void gtconv_aff(
 }
 
 /* nonGTConv → BN → AffinePReLU */
-static void ngtconv_aff(
+void ngtconv_aff(
     const int32_t *x, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
@@ -106,7 +106,7 @@ static void ngtconv_aff(
 }
 
 /* cTFA fusion: TA + FA + apply */
-static void ctfa(
+void ctfa(
     const int32_t *x, int C, int W, int pad,
     int16_t *tc, int tn, int fn, int tidim,
     const int16_t *tiw, const int32_t *tib, const int16_t *thw, const int32_t *thb,
@@ -123,12 +123,12 @@ static void ctfa(
 }
 
 /* Shuffle interleave + return */
-static void shuf(const int32_t *x, int C, int W, int32_t *y) {
+void shuf(const int32_t *x, int C, int W, int32_t *y) {
     shuffle_interleave(x,C,W,y);
 }
 
 /* Skip connection add */
-static void skip_add(const int32_t *a, const int32_t *b, int N, int32_t *y) {
+void skip_add(const int32_t *a, const int32_t *b, int N, int32_t *y) {
     for(int i=0;i<N;i++) y[i]=a[i]+b[i];
 }
 
@@ -286,7 +286,7 @@ static void e1_xmb0(const int32_t *x, int32_t *cc, int16_t *tc, int32_t *y) {
 /* ======================================================================== */
 /*  DECODER LAYER 0: De_XDWS0  [16,33]+skip_e4→[32,33]                      */
 /* ======================================================================== */
-static void d0_xdws0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *y) {
+void d0_xdws0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *y) {
     int32_t xs[16*33]; skip_add(x,sk,16*33,xs);
     int32_t yp[32*33];
     pconv_g2_aff(xs,8,16,33,
@@ -319,7 +319,7 @@ static void d0_xdws0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *
 /* ======================================================================== */
 /*  DECODER LAYER 1: De_XMB0  [32,33]+skip_e3→[24,33]                       */
 /* ======================================================================== */
-static void d1_xmb0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *y) {
+void d1_xmb0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *y) {
     int32_t xs[32*33]; skip_add(x,sk,32*33,xs);
     int32_t yp0[24*33];
     pconv_g2_aff(xs,16,12,33,
@@ -360,7 +360,7 @@ static void d1_xmb0(const int32_t *x, const int32_t *sk, int16_t *tc, int32_t *y
 /* ======================================================================== */
 /*  DECODER LAYER 2: De_XDWS1  [24,33]+skip_e2→[24,33]                      */
 /* ======================================================================== */
-static void d2_xdws1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
+void d2_xdws1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
     int32_t xs[24*33]; skip_add(x,sk,24*33,xs);
     int32_t yp[24*33];
     pconv_g2_aff(xs,12,12,33,
@@ -393,7 +393,7 @@ static void d2_xdws1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *
 /* ======================================================================== */
 /*  DECODER LAYER 3: De_XMB1  [24,33]+skip_e1→[12,65]                       */
 /* ======================================================================== */
-static void d3_xmb1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
+void d3_xmb1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
     int32_t xs[24*33]; skip_add(x,sk,24*33,xs);
     int32_t yp0[12*33];
     pconv_g2_aff(xs,12,6,33,
@@ -435,7 +435,7 @@ static void d3_xmb1(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *t
 /*  DECODER LAYER 4: De_XConv  [12,65]+skip_e0→[1,129]                      */
 /*  Verified: bias[1] weight[12×1×3×3=108] → Cout=1, cTFA TA input_dim=1    */
 /* ======================================================================== */
-static void d4_xconv(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
+void d4_xconv(const int32_t *x, const int32_t *sk, int32_t *cc, int16_t *tc, int32_t *y) {
     int32_t xs[12*65]; skip_add(x,sk,12*65,xs);
     /* Build 3D cache: x_cache = cat(2, cc[12,2,65], reshape(xs,[12,1,65])) */
     int32_t xc[12*3*65]; /* [12,3,65] */
