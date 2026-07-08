@@ -269,7 +269,7 @@ static void e1_xmb0(const int32_t *x, int32_t *cc, int16_t *tc, int32_t *y) {
         encoder_en_convs_1_pconv2_0_weight,encoder_en_convs_1_pconv2_0_bias,
         encoder_en_convs_1_pconv2_1_weight,encoder_en_convs_1_pconv2_1_bias,
         encoder_en_convs_1_pconv2_1_running_mean,encoder_en_convs_1_pconv2_1_running_var,
-        -14,-11,-14,yp1);
+        -14,-14,-14,yp1);
     int32_t yc[24*33];
     ctfa(yp1,24,33,3,tc,48,4,24,
         encoder_en_convs_1_pconv2_2_ta_gru_weight_ih_l0,encoder_en_convs_1_pconv2_2_ta_gru_bias_ih_l0,
