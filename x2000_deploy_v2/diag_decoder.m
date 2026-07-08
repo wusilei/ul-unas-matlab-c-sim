@@ -558,7 +558,7 @@ function y = export_ctfa_ta(prefix, x, C, W, h_cache, nHidden, input_dim, ...
     x_t = Fix_point(x_agg.', 'u32f20');  % [1, C]
     export_txt([prefix '_ta_energy.txt'], x_t, 'uint32');
 
-    [x_gru, ~] = GRU_module(x_t, nHidden, h_cache, ih_w, ih_b, hh_w, hh_b, -13, -8);
+    [x_gru, ~] = GRU_module(x_t, nHidden, h_cache, ih_w, ih_b, hh_w, hh_b, -21, -16);
     export_txt([prefix '_ta_gru.txt'], x_gru, 'int16');
 
     x_fc = round(x_gru * fc_w * 2^(-8)) + fc_b;  % [1, C]
@@ -588,14 +588,14 @@ function y = export_ctfa_fa(prefix, x, C, W, pad_len, nHidden, ...
     hc0 = zeros(1, nHidden);
     xg0 = zeros(nseg, nHidden);
     for i = 1:nseg
-        [xg0(i,:), hc0] = GRU_module(x_rs(i,:), nHidden, hc0, ih_w, ih_b, hh_w, hh_b, -13, -8);
+        [xg0(i,:), hc0] = GRU_module(x_rs(i,:), nHidden, hc0, ih_w, ih_b, hh_w, hh_b, -21, -16);
     end
     % Reverse GRU
     x_rev = x_rs(end:-1:1,:);
     hc1 = zeros(1, nHidden);
     xg1 = zeros(nseg, nHidden);
     for i = 1:nseg
-        [xg1(nseg-i+1,:), hc1] = GRU_module(x_rev(i,:), nHidden, hc1, rih_w, rih_b, rhh_w, rhh_b, -13, -8);
+        [xg1(nseg-i+1,:), hc1] = GRU_module(x_rev(i,:), nHidden, hc1, rih_w, rih_b, rhh_w, rhh_b, -21, -16);
     end
     x_gru = cat(2, xg0, xg1);  % [nseg, 2*nHidden]
     export_txt([prefix '_fa_gru.txt'], x_gru, 'int16');

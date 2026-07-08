@@ -903,8 +903,8 @@ void bigru_sequence_fp(
 void gru_step_fp_q20(
     const int32_t *x_t, int input_dim,
     int32_t *h_cache, int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out)
 {
@@ -966,8 +966,8 @@ void gru_step_fp_q20(
 void gru_sequence_fp_q20(
     const int32_t *x,int T,int input_dim,
     int32_t *h_cache,int nHidden,
-    const int16_t *ih_w,const int32_t *ih_b,
-    const int16_t *hh_w,const int32_t *hh_b,
+    const int32_t *ih_w,const int32_t *ih_b,
+    const int32_t *hh_w,const int32_t *hh_b,
     int Qr1,int Qr2,int16_t *y_out)
 {
     for(int t=0;t<T;t++)
@@ -977,10 +977,10 @@ void gru_sequence_fp_q20(
 
 void bigru_sequence_fp_q20(
     const int32_t *x,int T,int input_dim,int nHidden,
-    const int16_t *ih_w,const int32_t *ih_b,
-    const int16_t *hh_w,const int32_t *hh_b,
-    const int16_t *rih_w,const int32_t *rih_b,
-    const int16_t *rhh_w,const int32_t *rhh_b,
+    const int32_t *ih_w,const int32_t *ih_b,
+    const int32_t *hh_w,const int32_t *hh_b,
+    const int32_t *rih_w,const int32_t *rih_b,
+    const int32_t *rhh_w,const int32_t *rhh_b,
     int Qr1,int Qr2,int16_t *y_out)
 {
     int32_t hf[32]={0},hr[32]={0};
@@ -1223,7 +1223,7 @@ void ctfa_ta_fp(
     int16_t y_gru[64];
     gru_step_fp_q20(x_t, input_dim, ta_h_cache, nHidden,
                     ih_weight, ih_bias, hh_weight, hh_bias,
-                    -13, -8, y_gru);
+                    -21, -16, y_gru);
 
     /* FC: [1, nHidden] × [nHidden, C] → [1, C] */
     for (c = 0; c < C; c++) {
@@ -1308,7 +1308,7 @@ void ctfa_fa_fp(
     bigru_sequence_fp_q20(x_re, nseg, ngrp, nHidden,
                           ih_weight, ih_bias, hh_weight, hh_bias,
                           re_ih_weight, re_ih_bias, re_hh_weight, re_hh_bias,
-                          -13, -8, y_gru);
+                          -21, -16, y_gru);
 
     /* Step 5: FC: [nseg, 2*nHidden] → [nseg, ngrp] */
     int32_t *x_fc = (int32_t*)malloc(nseg * ngrp * sizeof(int32_t));

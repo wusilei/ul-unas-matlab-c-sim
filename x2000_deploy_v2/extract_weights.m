@@ -4,15 +4,17 @@
 
 clear; clc;
 
-weight_dir = fullfile(fileparts(mfilename('fullpath')), '..', 'para_in_mat_FP');
-out_dir = fileparts(mfilename('fullpath'));
+fp_dir   = fullfile(fileparts(mfilename('fullpath')), '..', 'para_in_mat_FP');
+float_dir = fullfile(fileparts(mfilename('fullpath')), '..', 'para_in_mat');
+out_dir  = fileparts(mfilename('fullpath'));
 
-addpath(weight_dir);
+addpath(fp_dir);
+addpath(float_dir);
 
 %% ====================================================================== %
 %% 1. Scan all .mat files
 %% ====================================================================== %
-files = dir(fullfile(weight_dir, '*.mat'));
+files = dir(fullfile(fp_dir, '*.mat'));
 fprintf('Found %d .mat weight files\n', length(files));
 
 % Build a struct map: key = C variable name, value = {data, type_str, dims, comment}
@@ -22,7 +24,7 @@ for i = 1:length(files)
     fname = files(i).name;
     [~, basename, ~] = fileparts(fname);
 
-    data_struct = load(fullfile(weight_dir, fname));
+    data_struct = load(fullfile(fp_dir, fname));
     var_names = fieldnames(data_struct);
     data = data_struct.(var_names{1});
 
@@ -96,8 +98,19 @@ for i = 1:length(files)
     % Determine Q format comment based on filename pattern
     q_comment = guess_q_format(basename, ctype, dims);
 
-    % Special: handle the pconv split for grouped convolutions
-    % (In MATLAB, pconv weights are [Cout*2, Cin] because groups=2)
+    % Plan A: GRU HH/IH weights — reload from float, quantize to int32 Q20
+    is_gru_w = contains(basename, '_gru_weight_ih_') || contains(basename, '_gru_weight_hh_');
+    if is_gru_w
+        float_file = fullfile(float_dir, fname);
+        if exist(float_file, 'file')
+            float_data = load(float_file);
+            float_vars = fieldnames(float_data);
+            float_vals = double(float_data.(float_vars{1}));
+            data = int32(round(float_vals * 1048576));
+            ctype = 'int32_t';
+            q_comment = 'Q20 (upgraded from Q12)';
+        end
+    end
 
     weight_map(c_name) = struct('data', data, 'ctype', ctype, 'dims', dim_str, 'q_comment', q_comment);
 end
@@ -267,11 +280,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define E0_TCONV_BN_QR2           (-14)\n');
     fprintf(fid, '#define E0_TCONV_AFFINE_QR1       (-13)\n');
     fprintf(fid, '#define E0_TCONV_AFFINE_QR2       (-13)\n');
-    fprintf(fid, '#define E0_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E0_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E0_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E0_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E0_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define E0_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E0_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E0_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E0_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E0_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define E0_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -293,11 +306,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define E1_PCONV1_BN_QR2          (-14)\n');
     fprintf(fid, '#define E1_PCONV1_AFFINE_QR1      (-13)\n');
     fprintf(fid, '#define E1_PCONV1_AFFINE_QR2      (-13)\n');
-    fprintf(fid, '#define E1_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E1_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E1_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E1_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E1_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define E1_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E1_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E1_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E1_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E1_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define E1_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -314,11 +327,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define E2_TCONV_BN_QR2           (-14)\n');
     fprintf(fid, '#define E2_TCONV_AFFINE_QR1       (-13)\n');
     fprintf(fid, '#define E2_TCONV_AFFINE_QR2       (-13)\n');
-    fprintf(fid, '#define E2_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E2_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E2_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E2_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E2_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define E2_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E2_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E2_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E2_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E2_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define E2_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -340,11 +353,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define E3_PCONV1_BN_QR2          (-14)\n');
     fprintf(fid, '#define E3_PCONV1_AFFINE_QR1      (-13)\n');
     fprintf(fid, '#define E3_PCONV1_AFFINE_QR2      (-13)\n');
-    fprintf(fid, '#define E3_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E3_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E3_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E3_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E3_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define E3_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E3_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E3_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E3_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E3_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define E3_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -361,11 +374,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define E4_NONTCONV_BN_QR2        (-14)\n');
     fprintf(fid, '#define E4_NONTCONV_AFFINE_QR1    (-13)\n');
     fprintf(fid, '#define E4_NONTCONV_AFFINE_QR2    (-13)\n');
-    fprintf(fid, '#define E4_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E4_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E4_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E4_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E4_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define E4_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define E4_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define E4_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define E4_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define E4_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define E4_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -382,11 +395,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define D0_NONTCONV_BN_QR2        (-14)\n');
     fprintf(fid, '#define D0_NONTCONV_AFFINE_QR1    (-13)\n');
     fprintf(fid, '#define D0_NONTCONV_AFFINE_QR2    (-13)\n');
-    fprintf(fid, '#define D0_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D0_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D0_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D0_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D0_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define D0_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D0_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D0_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D0_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D0_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define D0_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -408,11 +421,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define D1_PCONV1_BN_QR2          (-14)\n');
     fprintf(fid, '#define D1_PCONV1_AFFINE_QR1      (-13)\n');
     fprintf(fid, '#define D1_PCONV1_AFFINE_QR2      (-13)\n');
-    fprintf(fid, '#define D1_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D1_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D1_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D1_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D1_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define D1_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D1_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D1_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D1_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D1_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define D1_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -429,11 +442,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define D2_TCONV_BN_QR2           (-14)\n');
     fprintf(fid, '#define D2_TCONV_AFFINE_QR1       (-13)\n');
     fprintf(fid, '#define D2_TCONV_AFFINE_QR2       (-13)\n');
-    fprintf(fid, '#define D2_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D2_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D2_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D2_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D2_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define D2_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D2_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D2_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D2_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D2_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define D2_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -455,11 +468,11 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define D3_PCONV1_BN_QR2          (-14)\n');
     fprintf(fid, '#define D3_PCONV1_AFFINE_QR1      (-13)\n');
     fprintf(fid, '#define D3_PCONV1_AFFINE_QR2      (-13)\n');
-    fprintf(fid, '#define D3_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D3_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D3_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D3_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D3_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define D3_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D3_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D3_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D3_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D3_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define D3_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
@@ -469,23 +482,23 @@ function gen_qr_config(out_dir)
     fprintf(fid, '#define D4_TCONV_CONV_QR          (-14)\n');
     fprintf(fid, '#define D4_TCONV_BN_QR1           (-11)\n');
     fprintf(fid, '#define D4_TCONV_BN_QR2           (-11)\n');
-    fprintf(fid, '#define D4_CTFA_TA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D4_CTFA_TA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D4_CTFA_TA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D4_CTFA_TA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D4_CTFA_TA_FC_QR          (-8)\n');
-    fprintf(fid, '#define D4_CTFA_FA_GRU_QR1        (-13)\n');
-    fprintf(fid, '#define D4_CTFA_FA_GRU_QR2        (-8)\n');
+    fprintf(fid, '#define D4_CTFA_FA_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define D4_CTFA_FA_GRU_QR2        (-16)\n');
     fprintf(fid, '#define D4_CTFA_FA_FC_QR          (-9)\n');
     fprintf(fid, '#define D4_CTFA_ATTN_QR           (-15)\n');
     fprintf(fid, '\n');
 
     % ===== DPRNN =====
     fprintf(fid, '/* ── GDPRNN ────────────────────────────────────────────────── */\n');
-    fprintf(fid, '#define DPRNN_INTRARN_GRU_QR1     (-13)\n');
-    fprintf(fid, '#define DPRNN_INTRARN_GRU_QR2     (-8)\n');
+    fprintf(fid, '#define DPRNN_INTRARN_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define DPRNN_INTRARN_GRU_QR2        (-16)\n');
     fprintf(fid, '#define DPRNN_INTRARN_FC_QR       (-9)\n');
     fprintf(fid, '#define DPRNN_INTRARN_LN_QR       (-14)\n');
-    fprintf(fid, '#define DPRNN_INTERRN_GRU_QR1     (-13)\n');
-    fprintf(fid, '#define DPRNN_INTERRN_GRU_QR2     (-8)\n');
+    fprintf(fid, '#define DPRNN_INTERRN_GRU_QR1        (-21)\n');
+    fprintf(fid, '#define DPRNN_INTERRN_GRU_QR2        (-16)\n');
     fprintf(fid, '#define DPRNN_INTERRN_FC_QR       (-9)\n');
     fprintf(fid, '#define DPRNN_INTERRN_LN_QR       (-13)\n');
     fprintf(fid, '\n');

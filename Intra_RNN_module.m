@@ -53,9 +53,9 @@ x1 = x(:,9:16);
 
 nHidden = 4;
 
-x0_gru = BiGRU_module(x0, nHidden, rnn1_ih_weight, rnn1_ih_bias, rnn1_hh_weight, rnn1_hh_bias, rnn1_re_ih_weight, rnn1_re_ih_bias, rnn1_re_hh_weight, rnn1_re_hh_bias, -13, -8);
+x0_gru = BiGRU_module(x0, nHidden, rnn1_ih_weight, rnn1_ih_bias, rnn1_hh_weight, rnn1_hh_bias, rnn1_re_ih_weight, rnn1_re_ih_bias, rnn1_re_hh_weight, rnn1_re_hh_bias, -21, -16);
 
-x1_gru = BiGRU_module(x1, nHidden, rnn2_ih_weight, rnn2_ih_bias, rnn2_hh_weight, rnn2_hh_bias, rnn2_re_ih_weight, rnn2_re_ih_bias, rnn2_re_hh_weight, rnn2_re_hh_bias, -13, -8);
+x1_gru = BiGRU_module(x1, nHidden, rnn2_ih_weight, rnn2_ih_bias, rnn2_hh_weight, rnn2_hh_bias, rnn2_re_ih_weight, rnn2_re_ih_bias, rnn2_re_hh_weight, rnn2_re_hh_bias, -21, -16);
 
 x_gru = cat(2, x0_gru, x1_gru);
 

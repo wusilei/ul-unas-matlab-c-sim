@@ -196,8 +196,8 @@ void affineprelu_fp(
 void gru_step_fp(
     const int32_t *x_t, int input_dim,
     int16_t *h_cache, int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
@@ -205,8 +205,8 @@ void gru_step_fp(
 void gru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int16_t *h_cache, int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
@@ -214,8 +214,8 @@ void gru_sequence_fp(
 void bigru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     const int16_t *re_ih_weight, const int32_t *re_ih_bias,
     const int16_t *re_hh_weight, const int32_t *re_hh_bias,
     int Qr1, int Qr2,
@@ -225,24 +225,24 @@ void bigru_sequence_fp(
 void gru_step_fp_q20(
     const int32_t *x_t, int input_dim,
     int32_t *h_cache, int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
 void gru_sequence_fp_q20(
     const int32_t *x, int T, int input_dim,
     int32_t *h_cache, int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
 void bigru_sequence_fp_q20(
     const int32_t *x, int T, int input_dim,
     int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     const int16_t *re_ih_weight, const int32_t *re_ih_bias,
     const int16_t *re_hh_weight, const int32_t *re_hh_bias,
     int Qr1, int Qr2,
@@ -287,8 +287,8 @@ void mask_fp(
 void ctfa_ta_fp(
     const int32_t *x, int C, int W,
     int32_t *ta_h_cache, int nHidden, int input_dim,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     const int16_t *fc_weight, const int32_t *fc_bias,
     uint16_t *ta_out);
 
@@ -296,8 +296,8 @@ void ctfa_ta_fp(
 void ctfa_fa_fp(
     const int32_t *x, int C, int W, int pad_len,
     int nHidden,
-    const int16_t *ih_weight, const int32_t *ih_bias,
-    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int32_t *ih_weight, const int32_t *ih_bias,
+    const int32_t *hh_weight, const int32_t *hh_bias,
     const int16_t *re_ih_weight, const int32_t *re_ih_bias,
     const int16_t *re_hh_weight, const int32_t *re_hh_bias,
     const int16_t *fc_weight, const int32_t *fc_bias,

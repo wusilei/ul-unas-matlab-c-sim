@@ -115,7 +115,7 @@
 /* Layer 4: De_XConv */
 #define D4_IN_C         12
 #define D4_IN_W         65
-#define D4_OUT_C        1
+#define D4_OUT_C        1  /* verified: TConv Cout=1 */
 #define D4_OUT_W        129
 #define D4_TCONV_KH     3
 #define D4_TCONV_KW     3

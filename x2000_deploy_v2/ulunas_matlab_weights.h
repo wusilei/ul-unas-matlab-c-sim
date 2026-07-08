@@ -64,17 +64,17 @@ extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_0_dconv_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_0_dconv_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_0_dconv_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_0_dconv_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_0_dconv_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×32] */
 extern const int32_t decoder_de_convs_0_dconv_4_ta_fc_bias[32];
@@ -88,11 +88,11 @@ extern const int32_t decoder_de_convs_0_dconv_4_ta_gru_bias_hh_l0[192];
 /* Q10 int32_t [1×192] */
 extern const int32_t decoder_de_convs_0_dconv_4_ta_gru_bias_ih_l0[192];
 
-/* Q12 int16_t [64×192] */
-extern const int16_t decoder_de_convs_0_dconv_4_ta_gru_weight_hh_l0[12288];
+/* Q20 (upgraded from Q12) int32_t [64×192] */
+extern const int32_t decoder_de_convs_0_dconv_4_ta_gru_weight_hh_l0[12288];
 
-/* Q12 int16_t [32×192] */
-extern const int16_t decoder_de_convs_0_dconv_4_ta_gru_weight_ih_l0[6144];
+/* Q20 (upgraded from Q12) int32_t [32×192] */
+extern const int32_t decoder_de_convs_0_dconv_4_ta_gru_weight_ih_l0[6144];
 
 /* Q20 int32_t [1×32] */
 extern const int32_t decoder_de_convs_0_pconv_0_bias[32];
@@ -211,17 +211,17 @@ extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_1_pconv2_2_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_1_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_1_pconv2_2_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_1_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_1_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t decoder_de_convs_1_pconv2_2_ta_fc_bias[24];
@@ -235,11 +235,11 @@ extern const int32_t decoder_de_convs_1_pconv2_2_ta_gru_bias_hh_l0[144];
 /* Q10 int32_t [1×144] */
 extern const int32_t decoder_de_convs_1_pconv2_2_ta_gru_bias_ih_l0[144];
 
-/* Q12 int16_t [48×144] */
-extern const int16_t decoder_de_convs_1_pconv2_2_ta_gru_weight_hh_l0[6912];
+/* Q20 (upgraded from Q12) int32_t [48×144] */
+extern const int32_t decoder_de_convs_1_pconv2_2_ta_gru_weight_hh_l0[6912];
 
-/* Q12 int16_t [24×144] */
-extern const int16_t decoder_de_convs_1_pconv2_2_ta_gru_weight_ih_l0[3456];
+/* Q20 (upgraded from Q12) int32_t [24×144] */
+extern const int32_t decoder_de_convs_1_pconv2_2_ta_gru_weight_ih_l0[3456];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t decoder_de_convs_2_dconv_1_bias[24];
@@ -286,17 +286,17 @@ extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_2_dconv_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_2_dconv_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_2_dconv_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_2_dconv_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_2_dconv_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t decoder_de_convs_2_dconv_4_ta_fc_bias[24];
@@ -310,11 +310,11 @@ extern const int32_t decoder_de_convs_2_dconv_4_ta_gru_bias_hh_l0[144];
 /* Q10 int32_t [1×144] */
 extern const int32_t decoder_de_convs_2_dconv_4_ta_gru_bias_ih_l0[144];
 
-/* Q12 int16_t [48×144] */
-extern const int16_t decoder_de_convs_2_dconv_4_ta_gru_weight_hh_l0[6912];
+/* Q20 (upgraded from Q12) int32_t [48×144] */
+extern const int32_t decoder_de_convs_2_dconv_4_ta_gru_weight_hh_l0[6912];
 
-/* Q12 int16_t [24×144] */
-extern const int16_t decoder_de_convs_2_dconv_4_ta_gru_weight_ih_l0[3456];
+/* Q20 (upgraded from Q12) int32_t [24×144] */
+extern const int32_t decoder_de_convs_2_dconv_4_ta_gru_weight_ih_l0[3456];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t decoder_de_convs_2_pconv_0_bias[24];
@@ -433,17 +433,17 @@ extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_3_pconv2_2_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_3_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_3_pconv2_2_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_3_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_3_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×12] */
 extern const int32_t decoder_de_convs_3_pconv2_2_ta_fc_bias[12];
@@ -457,11 +457,11 @@ extern const int32_t decoder_de_convs_3_pconv2_2_ta_gru_bias_hh_l0[72];
 /* Q10 int32_t [1×72] */
 extern const int32_t decoder_de_convs_3_pconv2_2_ta_gru_bias_ih_l0[72];
 
-/* Q12 int16_t [24×72] */
-extern const int16_t decoder_de_convs_3_pconv2_2_ta_gru_weight_hh_l0[1728];
+/* Q20 (upgraded from Q12) int32_t [24×72] */
+extern const int32_t decoder_de_convs_3_pconv2_2_ta_gru_weight_hh_l0[1728];
 
-/* Q12 int16_t [12×72] */
-extern const int16_t decoder_de_convs_3_pconv2_2_ta_gru_weight_ih_l0[864];
+/* Q20 (upgraded from Q12) int32_t [12×72] */
+extern const int32_t decoder_de_convs_3_pconv2_2_ta_gru_weight_ih_l0[864];
 
 /* Q20 int32_t [1×1] */
 extern const int32_t decoder_de_convs_4_ops_1_bias[1];
@@ -499,17 +499,17 @@ extern const int32_t decoder_de_convs_4_ops_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t decoder_de_convs_4_ops_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_4_ops_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_4_ops_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_4_ops_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_4_ops_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_4_ops_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_4_ops_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t decoder_de_convs_4_ops_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t decoder_de_convs_4_ops_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×1] */
 extern const int32_t decoder_de_convs_4_ops_4_ta_fc_bias[1];
@@ -523,11 +523,11 @@ extern const int32_t decoder_de_convs_4_ops_4_ta_gru_bias_hh_l0[6];
 /* Q10 int32_t [1×6] */
 extern const int32_t decoder_de_convs_4_ops_4_ta_gru_bias_ih_l0[6];
 
-/* Q12 int16_t [2×6] */
-extern const int16_t decoder_de_convs_4_ops_4_ta_gru_weight_hh_l0[12];
+/* Q20 (upgraded from Q12) int32_t [2×6] */
+extern const int32_t decoder_de_convs_4_ops_4_ta_gru_weight_hh_l0[12];
 
-/* Q12 int16_t [1×6] */
-extern const int16_t decoder_de_convs_4_ops_4_ta_gru_weight_ih_l0[6];
+/* Q20 (upgraded from Q12) int32_t [1×6] */
+extern const int32_t decoder_de_convs_4_ops_4_ta_gru_weight_ih_l0[6];
 
 /* Q20 int32_t [1×16] */
 extern const int32_t dpgrnn_0_inter_fc_bias[16];
@@ -766,17 +766,17 @@ extern const int32_t encoder_en_convs_0_ops_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t encoder_en_convs_0_ops_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_0_ops_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_0_ops_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_0_ops_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_0_ops_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_0_ops_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_0_ops_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_0_ops_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_0_ops_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×12] */
 extern const int32_t encoder_en_convs_0_ops_4_ta_fc_bias[12];
@@ -790,11 +790,11 @@ extern const int32_t encoder_en_convs_0_ops_4_ta_gru_bias_hh_l0[72];
 /* Q10 int32_t [1×72] */
 extern const int32_t encoder_en_convs_0_ops_4_ta_gru_bias_ih_l0[72];
 
-/* Q12 int16_t [24×72] */
-extern const int16_t encoder_en_convs_0_ops_4_ta_gru_weight_hh_l0[1728];
+/* Q20 (upgraded from Q12) int32_t [24×72] */
+extern const int32_t encoder_en_convs_0_ops_4_ta_gru_weight_hh_l0[1728];
 
-/* Q12 int16_t [12×72] */
-extern const int16_t encoder_en_convs_0_ops_4_ta_gru_weight_ih_l0[864];
+/* Q20 (upgraded from Q12) int32_t [12×72] */
+extern const int32_t encoder_en_convs_0_ops_4_ta_gru_weight_ih_l0[864];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t encoder_en_convs_1_dconv_1_bias[24];
@@ -886,17 +886,17 @@ extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_1_pconv2_2_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_1_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_1_pconv2_2_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_1_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_1_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t encoder_en_convs_1_pconv2_2_ta_fc_bias[24];
@@ -910,11 +910,11 @@ extern const int32_t encoder_en_convs_1_pconv2_2_ta_gru_bias_hh_l0[144];
 /* Q10 int32_t [1×144] */
 extern const int32_t encoder_en_convs_1_pconv2_2_ta_gru_bias_ih_l0[144];
 
-/* Q12 int16_t [48×144] */
-extern const int16_t encoder_en_convs_1_pconv2_2_ta_gru_weight_hh_l0[6912];
+/* Q20 (upgraded from Q12) int32_t [48×144] */
+extern const int32_t encoder_en_convs_1_pconv2_2_ta_gru_weight_hh_l0[6912];
 
-/* Q12 int16_t [24×144] */
-extern const int16_t encoder_en_convs_1_pconv2_2_ta_gru_weight_ih_l0[3456];
+/* Q20 (upgraded from Q12) int32_t [24×144] */
+extern const int32_t encoder_en_convs_1_pconv2_2_ta_gru_weight_ih_l0[3456];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t encoder_en_convs_2_dconv_1_bias[24];
@@ -961,17 +961,17 @@ extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_2_dconv_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_2_dconv_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_2_dconv_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_2_dconv_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_2_dconv_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t encoder_en_convs_2_dconv_4_ta_fc_bias[24];
@@ -985,11 +985,11 @@ extern const int32_t encoder_en_convs_2_dconv_4_ta_gru_bias_hh_l0[144];
 /* Q10 int32_t [1×144] */
 extern const int32_t encoder_en_convs_2_dconv_4_ta_gru_bias_ih_l0[144];
 
-/* Q12 int16_t [48×144] */
-extern const int16_t encoder_en_convs_2_dconv_4_ta_gru_weight_hh_l0[6912];
+/* Q20 (upgraded from Q12) int32_t [48×144] */
+extern const int32_t encoder_en_convs_2_dconv_4_ta_gru_weight_hh_l0[6912];
 
-/* Q12 int16_t [24×144] */
-extern const int16_t encoder_en_convs_2_dconv_4_ta_gru_weight_ih_l0[3456];
+/* Q20 (upgraded from Q12) int32_t [24×144] */
+extern const int32_t encoder_en_convs_2_dconv_4_ta_gru_weight_ih_l0[3456];
 
 /* Q20 int32_t [1×24] */
 extern const int32_t encoder_en_convs_2_pconv_0_bias[24];
@@ -1108,17 +1108,17 @@ extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_3_pconv2_2_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_3_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_3_pconv2_2_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_3_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_3_pconv2_2_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×32] */
 extern const int32_t encoder_en_convs_3_pconv2_2_ta_fc_bias[32];
@@ -1132,11 +1132,11 @@ extern const int32_t encoder_en_convs_3_pconv2_2_ta_gru_bias_hh_l0[192];
 /* Q10 int32_t [1×192] */
 extern const int32_t encoder_en_convs_3_pconv2_2_ta_gru_bias_ih_l0[192];
 
-/* Q12 int16_t [64×192] */
-extern const int16_t encoder_en_convs_3_pconv2_2_ta_gru_weight_hh_l0[12288];
+/* Q20 (upgraded from Q12) int32_t [64×192] */
+extern const int32_t encoder_en_convs_3_pconv2_2_ta_gru_weight_hh_l0[12288];
 
-/* Q12 int16_t [32×192] */
-extern const int16_t encoder_en_convs_3_pconv2_2_ta_gru_weight_ih_l0[6144];
+/* Q20 (upgraded from Q12) int32_t [32×192] */
+extern const int32_t encoder_en_convs_3_pconv2_2_ta_gru_weight_ih_l0[6144];
 
 /* Q20 int32_t [1×16] */
 extern const int32_t encoder_en_convs_4_dconv_1_bias[16];
@@ -1183,17 +1183,17 @@ extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_bias_ih_l0[12];
 /* Q10 int32_t [1×12] */
 extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_bias_ih_l0_reverse[12];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_4_dconv_4_fa_gru_weight_hh_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_weight_hh_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_4_dconv_4_fa_gru_weight_hh_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_weight_hh_l0_reverse[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_4_dconv_4_fa_gru_weight_ih_l0[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_weight_ih_l0[48];
 
-/* Q12 int16_t [4×12] */
-extern const int16_t encoder_en_convs_4_dconv_4_fa_gru_weight_ih_l0_reverse[48];
+/* Q20 (upgraded from Q12) int32_t [4×12] */
+extern const int32_t encoder_en_convs_4_dconv_4_fa_gru_weight_ih_l0_reverse[48];
 
 /* Q20 int32_t [1×16] */
 extern const int32_t encoder_en_convs_4_dconv_4_ta_fc_bias[16];
@@ -1207,11 +1207,11 @@ extern const int32_t encoder_en_convs_4_dconv_4_ta_gru_bias_hh_l0[96];
 /* Q10 int32_t [1×96] */
 extern const int32_t encoder_en_convs_4_dconv_4_ta_gru_bias_ih_l0[96];
 
-/* Q12 int16_t [32×96] */
-extern const int16_t encoder_en_convs_4_dconv_4_ta_gru_weight_hh_l0[3072];
+/* Q20 (upgraded from Q12) int32_t [32×96] */
+extern const int32_t encoder_en_convs_4_dconv_4_ta_gru_weight_hh_l0[3072];
 
-/* Q12 int16_t [16×96] */
-extern const int16_t encoder_en_convs_4_dconv_4_ta_gru_weight_ih_l0[1536];
+/* Q20 (upgraded from Q12) int32_t [16×96] */
+extern const int32_t encoder_en_convs_4_dconv_4_ta_gru_weight_ih_l0[1536];
 
 /* Q20 int32_t [1×16] */
 extern const int32_t encoder_en_convs_4_pconv_0_bias[16];

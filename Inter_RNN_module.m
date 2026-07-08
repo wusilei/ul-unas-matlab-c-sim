@@ -37,9 +37,9 @@ x1 = x(:,9:16);
 
 nHidden = 8;
 
-[x0_gru, h_cache(:,1:8)] = GRU_module(x0, nHidden, h_cache(:,1:8), rnn1_ih_weight, rnn1_ih_bias, rnn1_hh_weight, rnn1_hh_bias, -13, -8);
+[x0_gru, h_cache(:,1:8)] = GRU_module(x0, nHidden, h_cache(:,1:8), rnn1_ih_weight, rnn1_ih_bias, rnn1_hh_weight, rnn1_hh_bias, -21, -16);
 
-[x1_gru, h_cache(:,9:16)] = GRU_module(x1, nHidden, h_cache(:,9:16), rnn2_ih_weight, rnn2_ih_bias, rnn2_hh_weight, rnn2_hh_bias, -13, -8);
+[x1_gru, h_cache(:,9:16)] = GRU_module(x1, nHidden, h_cache(:,9:16), rnn2_ih_weight, rnn2_ih_bias, rnn2_hh_weight, rnn2_hh_bias, -21, -16);
 
 x_gru = cat(2, x0_gru, x1_gru);
 

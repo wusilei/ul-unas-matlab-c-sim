@@ -570,7 +570,7 @@ void gdprnn_module(
     int32_t x0[33*8],x1[33*8];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){x0[t*8+c]=x_t[t*16+c];x1[t*8+c]=x_t[t*16+8+c];}}
     int16_t g0[33*8],g1[33*8];
-    bigru_sequence_fp_q20(x0,33,8,4,ir1_iw,ir1_ib,ir1_hw,ir1_hb,ir1_riw,ir1_rib,ir1_rhw,ir1_rhb,-13,-8,g0);
+    bigru_sequence_fp_q20(x0,33,8,4,ir1_iw,ir1_ib,ir1_hw,ir1_hb,ir1_riw,ir1_rib,ir1_rhw,ir1_rhb,-21,-16,g0);
     bigru_sequence_fp_q20(x1,33,8,4,ir2_iw,ir2_ib,ir2_hw,ir2_hb,ir2_riw,ir2_rib,ir2_rhw,ir2_rhb,-13,-8,g1);
     int16_t xg[33*16];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){xg[t*16+c]=g0[t*8+c];xg[t*16+8+c]=g1[t*8+c];}}
@@ -582,7 +582,7 @@ void gdprnn_module(
     int32_t y0[33*8],y1[33*8];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){y0[t*8+c]=yi[t*16+c];y1[t*8+c]=yi[t*16+8+c];}}
     int16_t h0[33*8],h1[33*8];
-    gru_sequence_fp_q20(y0,33,8,&inter_cache[0],8,er1_iw,er1_ib,er1_hw,er1_hb,-13,-8,h0);
+    gru_sequence_fp_q20(y0,33,8,&inter_cache[0],8,er1_iw,er1_ib,er1_hw,er1_hb,-21,-16,h0);
     gru_sequence_fp_q20(y1,33,8,&inter_cache[8],8,er2_iw,er2_ib,er2_hw,er2_hb,-13,-8,h1);
     int16_t xig[33*16];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){xig[t*16+c]=h0[t*8+c];xig[t*16+8+c]=h1[t*8+c];}}

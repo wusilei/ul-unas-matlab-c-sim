@@ -83,7 +83,7 @@ fprintf('TA1: energy [1x12], range=[%u,%u]\n', min(x_t(:)), max(x_t(:)));
 % Step TA2: GRU
 nHidden = 24;
 h_cache = zeros(1,nHidden);
-[x_gru, h_cache] = GRU_module(x_t, nHidden, h_cache, ta_ih_w, ta_ih_b, ta_hh_w, ta_hh_b, -13, -8);
+[x_gru, h_cache] = GRU_module(x_t, nHidden, h_cache, ta_ih_w, ta_ih_b, ta_hh_w, ta_hh_b, -21, -16);
 export_mat(fullfile(out_dir, 'e0_ta_gru_out.txt'), x_gru, 'int16');
 fprintf('TA2: GRU [1x24], range=[%d,%d]\n', min(x_gru(:)), max(x_gru(:)));
 

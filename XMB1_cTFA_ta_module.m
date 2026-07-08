@@ -20,7 +20,7 @@ x_t = Fix_point(x_t, 'u32f20');
 
 %% TA GRU --------------------------------------------------------------- %
 nHidden = 64;
-[x_gru, h_cache] = GRU_module(x_t, nHidden, h_cache, ta_ih_weight, ta_ih_bias, ta_hh_weight, ta_hh_bias, -13, -8);
+[x_gru, h_cache] = GRU_module(x_t, nHidden, h_cache, ta_ih_weight, ta_ih_bias, ta_hh_weight, ta_hh_bias, -21, -16);
 
 %% TA FC ---------------------------------------------------------------- %
 x_fc = round( x_gru*ta_fc_weight*2^(-10) ) + ta_fc_bias;

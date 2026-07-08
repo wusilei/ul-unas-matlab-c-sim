@@ -33,14 +33,14 @@ nHidden = 4;
 h_cache0 = zeros(1,nHidden);
 x_gru0 = zeros(9,nHidden);
 for i = 1:9
-    [x_gru0(i,:), h_cache0] = GRU_module(x_t(i,:), nHidden, h_cache0, fa_ih_weight, fa_ih_bias, fa_hh_weight, fa_hh_bias, -13, -8);
+    [x_gru0(i,:), h_cache0] = GRU_module(x_t(i,:), nHidden, h_cache0, fa_ih_weight, fa_ih_bias, fa_hh_weight, fa_hh_bias, -21, -16);
 end
 
 x_t_re = x_t(end:-1:1,:);
 h_cache1 = zeros(1,nHidden);
 x_gru1 = zeros(9,nHidden);
 for i = 1:9
-    [x_gru1(9-i+1,:), h_cache1] = GRU_module(x_t_re(i,:), nHidden, h_cache1, fa_re_ih_weight, fa_re_ih_bias, fa_re_hh_weight, fa_re_hh_bias, -13, -8);
+    [x_gru1(9-i+1,:), h_cache1] = GRU_module(x_t_re(i,:), nHidden, h_cache1, fa_re_ih_weight, fa_re_ih_bias, fa_re_hh_weight, fa_re_hh_bias, -21, -16);
 end
 
 x_gru = cat(2, x_gru0, x_gru1);
