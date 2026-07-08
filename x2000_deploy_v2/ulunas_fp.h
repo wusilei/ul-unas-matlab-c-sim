@@ -51,6 +51,11 @@ static inline int32_t sat_s32(int64_t x) {
     if (x < -2147483648LL) return -2147483648;
     return (int32_t)x;
 }
+static inline int32_t sat_s20(int64_t x) {
+    if (x >  1073741824LL) return  1073741824;  /* 1024 * 2^20 ≈ 2^30 */
+    if (x < -1073741824LL) return -1073741824;
+    return (int32_t)x;
+}
 static inline int16_t sat_s16(int32_t x) {
     if (x >  32767) return  32767;
     if (x < -32768) return -32768;
@@ -77,23 +82,23 @@ typedef struct {
     int32_t conv_cache_d1[CACHE_D1_SIZE];   /* [12, 33] */
     int32_t conv_cache_d2[CACHE_D2_SIZE];   /* [12, 2, 65] */
 
-    /* cTFA TA GRU hidden state caches (Encoder) — int16_t Q15 */
-    int16_t tfa_cache_e0[E0_TA_GRU_HID];    /* 24 */
-    int16_t tfa_cache_e1[E1_CTFA_TA_HID];   /* 48 */
-    int16_t tfa_cache_e2[E2_CTFA_TA_HID];   /* 48 */
-    int16_t tfa_cache_e3[E3_CTFA_TA_HID];   /* 64 */
-    int16_t tfa_cache_e4[E4_CTFA_TA_HID];   /* 32 */
+    /* cTFA TA GRU hidden state caches (Encoder) — int32_t Q20 */
+    int32_t tfa_cache_e0[E0_TA_GRU_HID];    /* 24 */
+    int32_t tfa_cache_e1[E1_CTFA_TA_HID];   /* 48 */
+    int32_t tfa_cache_e2[E2_CTFA_TA_HID];   /* 48 */
+    int32_t tfa_cache_e3[E3_CTFA_TA_HID];   /* 64 */
+    int32_t tfa_cache_e4[E4_CTFA_TA_HID];   /* 32 */
 
     /* cTFA TA GRU hidden state caches (Decoder) */
-    int16_t tfa_cache_d0[D0_CTFA_TA_HID];   /* 64 */
-    int16_t tfa_cache_d1[D1_CTFA_TA_HID];   /* 48 */
-    int16_t tfa_cache_d2[D2_CTFA_TA_HID];   /* 48 */
-    int16_t tfa_cache_d3[D3_CTFA_TA_HID];   /* 24 */
-    int16_t tfa_cache_d4[D4_CTFA_TA_HID];   /* 2 */
+    int32_t tfa_cache_d0[D0_CTFA_TA_HID];   /* 64 */
+    int32_t tfa_cache_d1[D1_CTFA_TA_HID];   /* 48 */
+    int32_t tfa_cache_d2[D2_CTFA_TA_HID];   /* 48 */
+    int32_t tfa_cache_d3[D3_CTFA_TA_HID];   /* 24 */
+    int32_t tfa_cache_d4[D4_CTFA_TA_HID];   /* 2 */
 
     /* GDPRNN Inter-RNN hidden state caches */
-    int16_t inter_cache_0[CACHE_INTER_SIZE]; /* [33, 16] */
-    int16_t inter_cache_1[CACHE_INTER_SIZE]; /* [33, 16] */
+    int32_t inter_cache_0[CACHE_INTER_SIZE]; /* [33, 16] */
+    int32_t inter_cache_1[CACHE_INTER_SIZE]; /* [33, 16] */
 
 } ulunas_state_t;
 
@@ -187,7 +192,36 @@ void affineprelu_fp(
 
 /* ── RNN ───────────────────────────────────────────────────────────────── */
 
-/* Single-direction GRU (one timestep) */
+/* Single-direction GRU Q20 (Q20 hidden, Q15 output for backward compat) */
+void gru_step_fp_q20(
+    const int32_t *x_t, int input_dim,
+    int32_t *h_cache, int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out);
+
+/* Multi-timestep unidirectional GRU Q20 */
+void gru_sequence_fp_q20(
+    const int32_t *x, int T, int input_dim,
+    int32_t *h_cache, int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out);
+
+/* BiGRU Q20 over T timesteps */
+void bigru_sequence_fp_q20(
+    const int32_t *x, int T, int input_dim,
+    int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int16_t *re_ih_weight, const int32_t *re_ih_bias,
+    const int16_t *re_hh_weight, const int32_t *re_hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out);
+
+/* ── Q15 GRU (kept for attention mask sigmoid calls) ──────────────────── */
 void gru_step_fp(
     const int32_t *x_t, int input_dim,
     int16_t *h_cache, int nHidden,
@@ -196,7 +230,6 @@ void gru_step_fp(
     int Qr1, int Qr2,
     int16_t *y_out);
 
-/* Multi-timestep unidirectional GRU */
 void gru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int16_t *h_cache, int nHidden,
@@ -205,7 +238,6 @@ void gru_sequence_fp(
     int Qr1, int Qr2,
     int16_t *y_out);
 
-/* BiGRU over T timesteps */
 void bigru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int nHidden,
@@ -254,7 +286,7 @@ void mask_fp(
 /* TA (Time Attention) branch */
 void ctfa_ta_fp(
     const int32_t *x, int C, int W,
-    int16_t *ta_h_cache, int nHidden, int input_dim,
+    int32_t *ta_h_cache, int nHidden, int input_dim,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     const int16_t *fc_weight, const int32_t *fc_bias,

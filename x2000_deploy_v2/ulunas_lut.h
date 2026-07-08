@@ -4,24 +4,62 @@
 
 #include <stdint.h>
 
-#define SIGMOID_LUT_SIZE 4096
-#define TANH_LUT_SIZE 4096
+#define SIGMOID_LUT_SIZE 1024
+#define TANH_LUT_SIZE 1024
 #define LOG10_LUT_SIZE 512
 #define SIGMOID_LUT_X_MIN_Q20  -8388608     /* -8.0 * 2^20 */
 #define SIGMOID_LUT_X_MAX_Q20  8388608      /*  8.0 * 2^20 */
-#define TANH_LUT_X_MIN_Q20     -6291456     /* -6.0 * 2^20 */
-#define TANH_LUT_X_MAX_Q20     6291456      /*  6.0 * 2^20 */
+#define TANH_LUT_X_MIN_Q20     -4194304     /* -4.0 * 2^20 */
+#define TANH_LUT_X_MAX_Q20     4194304      /*  4.0 * 2^20 */
 #define LOG10_LUT_X_MIN_Q20    1
 #define LOG10_LUT_X_MAX_Q20    8388608
+
+/* Q20 LUT config (power-of-2 range for bitwise index/frac) */
+#define SIG_Q20_LUT_SIZE  4096
+#define SIG_Q20_MIN        -8388608     /* -8.0 * 2^20 */
+#define SIG_Q20_MAX        8388608      /*  8.0 * 2^20 */
+#define SIG_Q20_RANGE      16777216  /* 2^24 */
+#define SIG_Q20_SHIFT      24
+
+#define TANH_Q20_LUT_SIZE 4096
+#define TANH_Q20_MIN       -4194304     /* -4.0 * 2^20 */
+#define TANH_Q20_MAX       4194304      /*  4.0 * 2^20 */
+#define TANH_Q20_RANGE     8388608   /* 2^23 */
+#define TANH_Q20_SHIFT     23
 
 extern const uint16_t sigmoid_lut_q15[SIGMOID_LUT_SIZE];
 extern const int16_t  tanh_lut_q15[TANH_LUT_SIZE];
 extern const int32_t  log10_lut_q20[LOG10_LUT_SIZE];
+extern const uint32_t sig_q20_lut[SIG_Q20_LUT_SIZE];
+extern const int32_t  tanh_q20_lut[TANH_Q20_LUT_SIZE];
 
 /* LUT lookup functions */
 uint16_t sigmoid_q20_to_q15(int32_t x_q20);
 int16_t  tanh_q20_to_q15(int32_t x_q20);
 int32_t  log10_q20_to_q20(int32_t x_q20);
 uint32_t sqrt_q40_to_q20(uint64_t x_q40);
+
+/* Q20 LUT lookup: bitwise index/frac (GTCRN-style), Q20 output */
+static inline uint32_t sigmoid_q20_to_q20(int32_t x_q20) {
+    if (x_q20 <= SIG_Q20_MIN) return 0;
+    if (x_q20 >= SIG_Q20_MAX) return 1048576;
+    int64_t pos = (int64_t)(x_q20 - SIG_Q20_MIN) * (SIG_Q20_LUT_SIZE - 1);
+    int32_t idx = (int32_t)(pos >> SIG_Q20_SHIFT);
+    int32_t frac = (int32_t)(pos & (SIG_Q20_RANGE - 1));
+    int64_t interp = (int64_t)sig_q20_lut[idx] * (SIG_Q20_RANGE - frac)
+                   + (int64_t)sig_q20_lut[idx + 1] * frac;
+    return (uint32_t)((interp + (SIG_Q20_RANGE >> 1)) >> SIG_Q20_SHIFT);
+}
+
+static inline int32_t tanh_q20_to_q20(int32_t x_q20) {
+    if (x_q20 <= TANH_Q20_MIN) return -1048576;
+    if (x_q20 >= TANH_Q20_MAX) return  1048576;
+    int64_t pos = (int64_t)(x_q20 - TANH_Q20_MIN) * (TANH_Q20_LUT_SIZE - 1);
+    int32_t idx = (int32_t)(pos >> TANH_Q20_SHIFT);
+    int32_t frac = (int32_t)(pos & (TANH_Q20_RANGE - 1));
+    int64_t interp = (int64_t)tanh_q20_lut[idx] * (TANH_Q20_RANGE - frac)
+                   + (int64_t)tanh_q20_lut[idx + 1] * frac;
+    return (int32_t)((interp + (TANH_Q20_RANGE >> 1)) >> TANH_Q20_SHIFT);
+}
 
 #endif /* ULUNAS_LUT_H */

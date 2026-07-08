@@ -816,11 +816,138 @@ void gru_step_fp(
     #undef HH_N_W
 }
 
-/* ── GRU sequence ────────────────────────────────────────────────────────
- * Process T timesteps of a unidirectional GRU.
- * x: [T, input_dim] in int32_t Q20, row-major
- * y_out: [T, nHidden] in int16_t Q15, row-major
+/* ── GRU single step Q20 ─────────────────────────────────────────────────
+ * Q20 version: hidden state is int32_t Q20 (was int16_t Q15).
+ * Gates use Q20 sigmoid/tanh LUTs with 5 extra bits of precision.
+ * Hidden mixing at Q20: h = ((2^20-z)*n + z*h) >> 20.
+ *
+ * x_t:     [input_dim] in int32_t Q20
+ * h_cache: [nHidden] in int32_t Q20 (in/out)
+ * y_out:   [nHidden] in int32_t Q20
  */
+void gru_step_fp_q20(
+    const int32_t *x_t, int input_dim,
+    int32_t *h_cache, int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out)
+{
+    int j;
+    int32_t round_ih = (int32_t)(1LL << ((-Qr1) - 1));
+    int32_t round_hh = (int32_t)(1LL << ((-Qr2) - 1));
+    int32_t round_gate = (int32_t)(1LL << (20 - 1));  /* 2^(-20) */
+    int32_t round_q15 = (int32_t)(1 << (5 - 1));       /* Q20→Q15 rounding */
+
+    #define IH_R_W(i, j)  ih_weight[(i) + (j) * input_dim]
+    #define IH_Z_W(i, j)  ih_weight[(i) + ((j) + nHidden) * input_dim]
+    #define IH_N_W(i, j)  ih_weight[(i) + ((j) + 2*nHidden) * input_dim]
+    #define HH_R_W(i, j)  hh_weight[(i) + (j) * nHidden]
+    #define HH_Z_W(i, j)  hh_weight[(i) + ((j) + nHidden) * nHidden]
+    #define HH_N_W(i, j)  hh_weight[(i) + ((j) + 2*nHidden) * nHidden]
+
+    uint32_t r_t_q20[64], z_t_q20[64];
+    int32_t h_t_q20_[64];
+    int32_t n_t_q20[64];
+
+    for (j = 0; j < nHidden; j++) {
+        /* ── Reset gate R ── */
+        int64_t ih_r_sum = 0;
+        for (int i = 0; i < input_dim; i++)
+            ih_r_sum += (int64_t)x_t[i] * (int64_t)IH_R_W(i, j);
+        int32_t ih_r = (int32_t)((ih_r_sum + (int64_t)round_ih) >> (-Qr1));
+
+        int64_t hh_r_sum = 0;
+        for (int k = 0; k < nHidden; k++)
+            hh_r_sum += (int64_t)h_cache[k] * (int64_t)HH_R_W(k, j);
+        int32_t hh_r = (int32_t)((hh_r_sum + (int64_t)round_hh) >> (-Qr2));
+
+        int32_t r_t = ih_r + hh_r + ih_bias[j] + hh_bias[j];
+        r_t_q20[j] = sigmoid_q20_to_q20(r_t);
+
+        /* ── Update gate Z ── */
+        int64_t ih_z_sum = 0;
+        for (int i = 0; i < input_dim; i++)
+            ih_z_sum += (int64_t)x_t[i] * (int64_t)IH_Z_W(i, j);
+        int32_t ih_z = (int32_t)((ih_z_sum + (int64_t)round_ih) >> (-Qr1));
+
+        int64_t hh_z_sum = 0;
+        for (int k = 0; k < nHidden; k++)
+            hh_z_sum += (int64_t)h_cache[k] * (int64_t)HH_Z_W(k, j);
+        int32_t hh_z = (int32_t)((hh_z_sum + (int64_t)round_hh) >> (-Qr2));
+
+        int32_t z_t = ih_z + hh_z + ih_bias[j + nHidden] + hh_bias[j + nHidden];
+        z_t_q20[j] = sigmoid_q20_to_q20(z_t);
+
+        /* ── Candidate hidden state N ── */
+        int64_t hh_n_sum = 0;
+        for (int k = 0; k < nHidden; k++)
+            hh_n_sum += (int64_t)h_cache[k] * (int64_t)HH_N_W(k, j);
+        int32_t hh_n = (int32_t)((hh_n_sum + (int64_t)round_hh) >> (-Qr2));
+        h_t_q20_[j] = hh_n + hh_bias[j + 2*nHidden];
+
+        int64_t ih_n_sum = 0;
+        for (int i = 0; i < input_dim; i++)
+            ih_n_sum += (int64_t)x_t[i] * (int64_t)IH_N_W(i, j);
+        int32_t ih_n = (int32_t)((ih_n_sum + (int64_t)round_ih) >> (-Qr1));
+
+        /* r_t * h_t in Q20: (Q20 * Q20) >> 20 = Q20 */
+        int64_t r_h_prod = (int64_t)r_t_q20[j] * (int64_t)h_t_q20_[j];
+        int32_t r_h_mix = (int32_t)((r_h_prod + (int64_t)round_gate) >> 20);
+
+        int32_t n_t = ih_n + r_h_mix + ih_bias[j + 2*nHidden];
+        n_t_q20[j] = tanh_q20_to_q20(n_t);
+    }
+
+    /* ── Hidden state update (Q20 internal) + Q20→Q15 output ── */
+    for (j = 0; j < nHidden; j++) {
+        /* h = round((2^20 - z_t) .* n_t * 2^(-20)) + round(z_t .* h_cache * 2^(-20)) */
+        uint64_t one_minus_z = (uint64_t)(1048576ULL - (uint64_t)z_t_q20[j]);
+        int64_t term1 = (int64_t)one_minus_z * (int64_t)n_t_q20[j];
+        int32_t t1 = (int32_t)((term1 + (int64_t)round_gate) >> 20);
+
+        int64_t term2 = (int64_t)z_t_q20[j] * (int64_t)h_cache[j];
+        int32_t t2 = (int32_t)((term2 + (int64_t)round_gate) >> 20);
+
+        int64_t h_new = (int64_t)t1 + (int64_t)t2;
+        h_cache[j] = sat_s20(h_new);
+
+        /* Q20→Q15: round(h_new / 32) with proper rounding */
+        int32_t h_q15;
+        if (h_new >= 0)
+            h_q15 = (int32_t)((h_new + 16) >> 5);  /* 16 = 2^4 = 2^(5-1) */
+        else
+            h_q15 = (int32_t)((h_new - 16) >> 5);
+        y_out[j] = sat_s16(h_q15);
+    }
+
+    #undef IH_R_W
+    #undef IH_Z_W
+    #undef IH_N_W
+    #undef HH_R_W
+    #undef HH_Z_W
+    #undef HH_N_W
+}
+
+/* ── GRU sequence Q20 ─────────────────────────────────────────────────── */
+void gru_sequence_fp_q20(
+    const int32_t *x, int T, int input_dim,
+    int32_t *h_cache, int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out)
+{
+    for (int t = 0; t < T; t++) {
+        const int32_t *x_t = &x[t * input_dim];
+        int16_t *y_t = &y_out[t * nHidden];
+        gru_step_fp_q20(x_t, input_dim, h_cache, nHidden,
+                        ih_weight, ih_bias, hh_weight, hh_bias,
+                        Qr1, Qr2, y_t);
+    }
+}
+
+/* ── GRU sequence (Q15, kept for backward compat) ──────────────────────── */
 void gru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int16_t *h_cache, int nHidden,
@@ -829,8 +956,7 @@ void gru_sequence_fp(
     int Qr1, int Qr2,
     int16_t *y_out)
 {
-    int t;
-    for (t = 0; t < T; t++) {
+    for (int t = 0; t < T; t++) {
         const int32_t *x_t = &x[t * input_dim];
         int16_t *y_t = &y_out[t * nHidden];
         gru_step_fp(x_t, input_dim, h_cache, nHidden,
@@ -886,9 +1012,50 @@ void bigru_sequence_fp(
             y_out[t * 2 * nHidden + j] = y_fwd[t * nHidden + j];
         }
         for (int j = 0; j < nHidden; j++) {
-            /* y_rev reversed: last timestep of y_rev = first of original */
             y_out[t * 2 * nHidden + nHidden + j] = y_rev[(T - 1 - t) * nHidden + j];
         }
+    }
+
+    free(y_fwd);
+    free(y_rev);
+}
+
+/* ── BiGRU sequence Q20 ───────────────────────────────────────────────── */
+void bigru_sequence_fp_q20(
+    const int32_t *x, int T, int input_dim,
+    int nHidden,
+    const int16_t *ih_weight, const int32_t *ih_bias,
+    const int16_t *hh_weight, const int32_t *hh_bias,
+    const int16_t *re_ih_weight, const int32_t *re_ih_bias,
+    const int16_t *re_hh_weight, const int32_t *re_hh_bias,
+    int Qr1, int Qr2,
+    int16_t *y_out)
+{
+    int t;
+    int32_t h_fwd[32] = {0};
+    int32_t h_rev[32] = {0};
+    int16_t *y_fwd = (int16_t *)malloc(T * nHidden * sizeof(int16_t));
+    int16_t *y_rev = (int16_t *)malloc(T * nHidden * sizeof(int16_t));
+
+    for (t = 0; t < T; t++) {
+        const int32_t *x_t = &x[t * input_dim];
+        gru_step_fp_q20(x_t, input_dim, h_fwd, nHidden,
+                        ih_weight, ih_bias, hh_weight, hh_bias,
+                        Qr1, Qr2, &y_fwd[t * nHidden]);
+    }
+
+    for (t = 0; t < T; t++) {
+        const int32_t *x_t = &x[(T - 1 - t) * input_dim];
+        gru_step_fp_q20(x_t, input_dim, h_rev, nHidden,
+                        re_ih_weight, re_ih_bias, re_hh_weight, re_hh_bias,
+                        Qr1, Qr2, &y_rev[t * nHidden]);
+    }
+
+    for (t = 0; t < T; t++) {
+        for (int j = 0; j < nHidden; j++)
+            y_out[t * 2 * nHidden + j] = y_fwd[t * nHidden + j];
+        for (int j = 0; j < nHidden; j++)
+            y_out[t * 2 * nHidden + nHidden + j] = y_rev[(T - 1 - t) * nHidden + j];
     }
 
     free(y_fwd);
@@ -1063,7 +1230,7 @@ void mask_fp(
  */
 void ctfa_ta_fp(
     const int32_t *x, int C, int W,
-    int16_t *ta_h_cache, int nHidden, int input_dim,
+    int32_t *ta_h_cache, int nHidden, int input_dim,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     const int16_t *fc_weight, const int32_t *fc_bias,
@@ -1115,11 +1282,11 @@ void ctfa_ta_fp(
         if (x_t[c] < 0) x_t[c] = 0;
     }
 
-    /* GRU: input_dim=C, producing [1, nHidden] */
+    /* GRU Q20: int32_t hidden state, int16_t output */
     int16_t y_gru[64];  /* max nHidden=64 */
-    gru_step_fp(x_t, input_dim, ta_h_cache, nHidden,
-                ih_weight, ih_bias, hh_weight, hh_bias,
-                -13, -8, y_gru);
+    gru_step_fp_q20(x_t, input_dim, ta_h_cache, nHidden,
+                    ih_weight, ih_bias, hh_weight, hh_bias,
+                    -13, -8, y_gru);
 
     /* FC: [1, nHidden] × [nHidden, C] → [1, C] */
     for (c = 0; c < C; c++) {
@@ -1198,13 +1365,13 @@ void ctfa_fa_fp(
         }
     }
 
-    /* Step 4: BiGRU over nseg timesteps, input_dim=ngrp, nHidden=4 */
+    /* Step 4: BiGRU Q20 over nseg timesteps, input_dim=ngrp, nHidden=4 */
     int total_hid = 2 * nHidden;  /* BiGRU output = 2*4=8 */
     int16_t *y_gru = (int16_t*)malloc(nseg * total_hid * sizeof(int16_t));
-    bigru_sequence_fp(x_re, nseg, ngrp, nHidden,
-                      ih_weight, ih_bias, hh_weight, hh_bias,
-                      re_ih_weight, re_ih_bias, re_hh_weight, re_hh_bias,
-                      -13, -8, y_gru);
+    bigru_sequence_fp_q20(x_re, nseg, ngrp, nHidden,
+                          ih_weight, ih_bias, hh_weight, hh_bias,
+                          re_ih_weight, re_ih_bias, re_hh_weight, re_hh_bias,
+                          -13, -8, y_gru);
 
     /* Step 5: FC: [nseg, 2*nHidden] → [nseg, ngrp] */
     int32_t *x_fc = (int32_t*)malloc(nseg * ngrp * sizeof(int32_t));

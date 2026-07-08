@@ -108,7 +108,7 @@ void ngtconv_aff(
 /* cTFA fusion: TA + FA + apply */
 void ctfa(
     const int32_t *x, int C, int W, int pad,
-    int16_t *tc, int tn, int fn, int tidim,
+    int32_t *tc, int tn, int fn, int tidim,
     const int16_t *tiw, const int32_t *tib, const int16_t *thw, const int32_t *thb,
     const int16_t *tfw, const int32_t *tfb,
     const int16_t *fiw, const int32_t *fib, const int16_t *fhw, const int32_t *fhb,
@@ -570,8 +570,8 @@ void gdprnn_module(
     int32_t x0[33*8],x1[33*8];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){x0[t*8+c]=x_t[t*16+c];x1[t*8+c]=x_t[t*16+8+c];}}
     int16_t g0[33*8],g1[33*8];
-    bigru_sequence_fp(x0,33,8,4,ir1_iw,ir1_ib,ir1_hw,ir1_hb,ir1_riw,ir1_rib,ir1_rhw,ir1_rhb,-13,-8,g0);
-    bigru_sequence_fp(x1,33,8,4,ir2_iw,ir2_ib,ir2_hw,ir2_hb,ir2_riw,ir2_rib,ir2_rhw,ir2_rhb,-13,-8,g1);
+    bigru_sequence_fp_q20(x0,33,8,4,ir1_iw,ir1_ib,ir1_hw,ir1_hb,ir1_riw,ir1_rib,ir1_rhw,ir1_rhb,-13,-8,g0);
+    bigru_sequence_fp_q20(x1,33,8,4,ir2_iw,ir2_ib,ir2_hw,ir2_hb,ir2_riw,ir2_rib,ir2_rhw,ir2_rhb,-13,-8,g1);
     int16_t xg[33*16];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){xg[t*16+c]=g0[t*8+c];xg[t*16+8+c]=g1[t*8+c];}}
     int32_t xf[33*16]; fc_fp_s16(xg,33,16,16,ifc_w,ifc_b,-9,xf);
@@ -582,8 +582,8 @@ void gdprnn_module(
     int32_t y0[33*8],y1[33*8];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){y0[t*8+c]=yi[t*16+c];y1[t*8+c]=yi[t*16+8+c];}}
     int16_t h0[33*8],h1[33*8];
-    gru_sequence_fp(y0,33,8,&inter_cache[0],8,er1_iw,er1_ib,er1_hw,er1_hb,-13,-8,h0);
-    gru_sequence_fp(y1,33,8,&inter_cache[8],8,er2_iw,er2_ib,er2_hw,er2_hb,-13,-8,h1);
+    gru_sequence_fp_q20(y0,33,8,&inter_cache[0],8,er1_iw,er1_ib,er1_hw,er1_hb,-13,-8,h0);
+    gru_sequence_fp_q20(y1,33,8,&inter_cache[8],8,er2_iw,er2_ib,er2_hw,er2_hb,-13,-8,h1);
     int16_t xig[33*16];
     for(int t=0;t<33;t++){for(int c=0;c<8;c++){xig[t*16+c]=h0[t*8+c];xig[t*16+8+c]=h1[t*8+c];}}
     int32_t xif[33*16]; fc_fp_s16(xig,33,16,16,efc_w,efc_b,-9,xif);

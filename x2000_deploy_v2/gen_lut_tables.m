@@ -5,9 +5,13 @@
 clear; clc;
 
 %% Config
-SIGMOID_LUT_SIZE = 4096;
-TANH_LUT_SIZE    = 4096;
+SIGMOID_LUT_SIZE = 1024;
+TANH_LUT_SIZE    = 1024;
 LOG10_LUT_SIZE   = 512;
+
+%% Q20 LUT config (power-of-2 range → bitwise index)
+SIG_Q20_LUT_SIZE  = 4096;
+TANH_Q20_LUT_SIZE = 4096;
 
 out_dir = fileparts(mfilename('fullpath'));
 
@@ -31,8 +35,8 @@ sigmoid_lut_q15 = uint16(max(0, min(65535, sigmoid_lut_q15)));
 %% ====================================================================== %
 %% 2. Tanh LUT: int32_t Q20 → int16_t Q15
 %% ====================================================================== %
-x_min = -6;
-x_max =  6;
+x_min = -4;
+x_max =  4;
 x_step = (x_max - x_min) / (TANH_LUT_SIZE - 1);
 
 tanh_lut_q15 = zeros(1, TANH_LUT_SIZE);
@@ -43,6 +47,38 @@ for i = 1:TANH_LUT_SIZE
 end
 % Clip to int16 range
 tanh_lut_q15 = int16(max(-32768, min(32767, tanh_lut_q15)));
+
+%% ====================================================================== %
+%% 2b. Sigmoid Q20 LUT: int32_t Q20 → uint32_t Q20
+%%     Range [-8,8] Q20 = [-8388608, 8388608], RANGE=2^24
+%% ====================================================================== %
+x_min = -8;
+x_max =  8;
+x_step = (x_max - x_min) / (SIG_Q20_LUT_SIZE - 1);
+
+sig_q20_lut = zeros(1, SIG_Q20_LUT_SIZE);
+for i = 1:SIG_Q20_LUT_SIZE
+    x_float = x_min + (i-1) * x_step;
+    y_float = 1.0 / (1.0 + exp(-x_float));
+    sig_q20_lut(i) = round(y_float * 1048576);  % Q20
+end
+sig_q20_lut = uint32(max(0, min(4294967295, sig_q20_lut)));
+
+%% ====================================================================== %
+%% 2c. Tanh Q20 LUT: int32_t Q20 → int32_t Q20
+%%     Range [-4,4] Q20 = [-4194304, 4194304], RANGE=2^23
+%% ====================================================================== %
+x_min = -4;
+x_max =  4;
+x_step = (x_max - x_min) / (TANH_Q20_LUT_SIZE - 1);
+
+tanh_q20_lut = zeros(1, TANH_Q20_LUT_SIZE);
+for i = 1:TANH_Q20_LUT_SIZE
+    x_float = x_min + (i-1) * x_step;
+    y_float = tanh(x_float);
+    tanh_q20_lut(i) = round(y_float * 1048576);  % Q20
+end
+tanh_q20_lut = int32(max(-2147483648, min(2147483647, tanh_q20_lut)));
 
 %% ====================================================================== %
 %% 3. Log10 LUT: int32_t Q20 → int32_t Q20
@@ -80,20 +116,58 @@ fprintf(fid_h, '#define TANH_LUT_SIZE %d\n', TANH_LUT_SIZE);
 fprintf(fid_h, '#define LOG10_LUT_SIZE %d\n', LOG10_LUT_SIZE);
 fprintf(fid_h, '#define SIGMOID_LUT_X_MIN_Q20  %d     /* -8.0 * 2^20 */\n', int32(-8*2^20));
 fprintf(fid_h, '#define SIGMOID_LUT_X_MAX_Q20  %d      /*  8.0 * 2^20 */\n', int32(8*2^20));
-fprintf(fid_h, '#define TANH_LUT_X_MIN_Q20     %d     /* %.1f * 2^20 */\n', int32(x_min*2^20), x_min);
-fprintf(fid_h, '#define TANH_LUT_X_MAX_Q20     %d      /*  %.1f * 2^20 */\n', int32(x_max*2^20), x_max);
+fprintf(fid_h, '#define TANH_LUT_X_MIN_Q20     %d     /* -4.0 * 2^20 */\n', int32(-4*2^20));
+fprintf(fid_h, '#define TANH_LUT_X_MAX_Q20     %d      /*  4.0 * 2^20 */\n', int32(4*2^20));
 fprintf(fid_h, '#define LOG10_LUT_X_MIN_Q20    %d\n', int32(x_min_q20));
 fprintf(fid_h, '#define LOG10_LUT_X_MAX_Q20    %d\n', int32(x_max_q20));
+fprintf(fid_h, '\n');
+fprintf(fid_h, '/* Q20 LUT config (power-of-2 range for bitwise index/frac) */\n');
+fprintf(fid_h, '#define SIG_Q20_LUT_SIZE  %d\n', SIG_Q20_LUT_SIZE);
+fprintf(fid_h, '#define SIG_Q20_MIN        %d     /* -8.0 * 2^20 */\n', int32(-8*2^20));
+fprintf(fid_h, '#define SIG_Q20_MAX        %d      /*  8.0 * 2^20 */\n', int32(8*2^20));
+fprintf(fid_h, '#define SIG_Q20_RANGE      %d  /* 2^24 */\n', int32(16*2^20));
+fprintf(fid_h, '#define SIG_Q20_SHIFT      24\n');
+fprintf(fid_h, '\n');
+fprintf(fid_h, '#define TANH_Q20_LUT_SIZE %d\n', TANH_Q20_LUT_SIZE);
+fprintf(fid_h, '#define TANH_Q20_MIN       %d     /* -4.0 * 2^20 */\n', int32(-4*2^20));
+fprintf(fid_h, '#define TANH_Q20_MAX       %d      /*  4.0 * 2^20 */\n', int32(4*2^20));
+fprintf(fid_h, '#define TANH_Q20_RANGE     %d   /* 2^23 */\n', int32(8*2^20));
+fprintf(fid_h, '#define TANH_Q20_SHIFT     23\n');
 fprintf(fid_h, '\n');
 fprintf(fid_h, 'extern const uint16_t sigmoid_lut_q15[SIGMOID_LUT_SIZE];\n');
 fprintf(fid_h, 'extern const int16_t  tanh_lut_q15[TANH_LUT_SIZE];\n');
 fprintf(fid_h, 'extern const int32_t  log10_lut_q20[LOG10_LUT_SIZE];\n');
+fprintf(fid_h, 'extern const uint32_t sig_q20_lut[SIG_Q20_LUT_SIZE];\n');
+fprintf(fid_h, 'extern const int32_t  tanh_q20_lut[TANH_Q20_LUT_SIZE];\n');
 fprintf(fid_h, '\n');
 fprintf(fid_h, '/* LUT lookup functions */\n');
 fprintf(fid_h, 'uint16_t sigmoid_q20_to_q15(int32_t x_q20);\n');
 fprintf(fid_h, 'int16_t  tanh_q20_to_q15(int32_t x_q20);\n');
 fprintf(fid_h, 'int32_t  log10_q20_to_q20(int32_t x_q20);\n');
 fprintf(fid_h, 'uint32_t sqrt_q40_to_q20(uint64_t x_q40);\n');
+fprintf(fid_h, '\n');
+fprintf(fid_h, '/* Q20 LUT lookup: bitwise index/frac (GTCRN-style), Q20 output */\n');
+fprintf(fid_h, 'static inline uint32_t sigmoid_q20_to_q20(int32_t x_q20) {\n');
+fprintf(fid_h, '    if (x_q20 <= SIG_Q20_MIN) return 0;\n');
+fprintf(fid_h, '    if (x_q20 >= SIG_Q20_MAX) return 1048576;\n');
+fprintf(fid_h, '    int64_t pos = (int64_t)(x_q20 - SIG_Q20_MIN) * (SIG_Q20_LUT_SIZE - 1);\n');
+fprintf(fid_h, '    int32_t idx = (int32_t)(pos >> SIG_Q20_SHIFT);\n');
+fprintf(fid_h, '    int32_t frac = (int32_t)(pos & (SIG_Q20_RANGE - 1));\n');
+fprintf(fid_h, '    int64_t interp = (int64_t)sig_q20_lut[idx] * (SIG_Q20_RANGE - frac)\n');
+fprintf(fid_h, '                   + (int64_t)sig_q20_lut[idx + 1] * frac;\n');
+fprintf(fid_h, '    return (uint32_t)((interp + (SIG_Q20_RANGE >> 1)) >> SIG_Q20_SHIFT);\n');
+fprintf(fid_h, '}\n');
+fprintf(fid_h, '\n');
+fprintf(fid_h, 'static inline int32_t tanh_q20_to_q20(int32_t x_q20) {\n');
+fprintf(fid_h, '    if (x_q20 <= TANH_Q20_MIN) return -1048576;\n');
+fprintf(fid_h, '    if (x_q20 >= TANH_Q20_MAX) return  1048576;\n');
+fprintf(fid_h, '    int64_t pos = (int64_t)(x_q20 - TANH_Q20_MIN) * (TANH_Q20_LUT_SIZE - 1);\n');
+fprintf(fid_h, '    int32_t idx = (int32_t)(pos >> TANH_Q20_SHIFT);\n');
+fprintf(fid_h, '    int32_t frac = (int32_t)(pos & (TANH_Q20_RANGE - 1));\n');
+fprintf(fid_h, '    int64_t interp = (int64_t)tanh_q20_lut[idx] * (TANH_Q20_RANGE - frac)\n');
+fprintf(fid_h, '                   + (int64_t)tanh_q20_lut[idx + 1] * frac;\n');
+fprintf(fid_h, '    return (int32_t)((interp + (TANH_Q20_RANGE >> 1)) >> TANH_Q20_SHIFT);\n');
+fprintf(fid_h, '}\n');
 fprintf(fid_h, '\n');
 fprintf(fid_h, '#endif /* ULUNAS_LUT_H */\n');
 fclose(fid_h);
@@ -135,6 +209,27 @@ for i = 1:TANH_LUT_SIZE
     if mod(i, 8) == 0
         fprintf(fid_c, '\n');
     end
+end
+fprintf(fid_c, '\n};\n\n');
+
+% Sigmoid Q20 LUT
+fprintf(fid_c, 'const uint32_t sig_q20_lut[%d] = {\n', SIG_Q20_LUT_SIZE);
+n_per_line = 6;
+for i = 1:SIG_Q20_LUT_SIZE
+    if mod(i, n_per_line) == 1, fprintf(fid_c, '    '); end
+    fprintf(fid_c, '%10u', sig_q20_lut(i));
+    if i < SIG_Q20_LUT_SIZE, fprintf(fid_c, ', '); end
+    if mod(i, n_per_line) == 0, fprintf(fid_c, '\n'); end
+end
+fprintf(fid_c, '\n};\n\n');
+
+% Tanh Q20 LUT
+fprintf(fid_c, 'const int32_t tanh_q20_lut[%d] = {\n', TANH_Q20_LUT_SIZE);
+for i = 1:TANH_Q20_LUT_SIZE
+    if mod(i, n_per_line) == 1, fprintf(fid_c, '    '); end
+    fprintf(fid_c, '%11d', tanh_q20_lut(i));
+    if i < TANH_Q20_LUT_SIZE, fprintf(fid_c, ', '); end
+    if mod(i, n_per_line) == 0, fprintf(fid_c, '\n'); end
 end
 fprintf(fid_c, '\n};\n\n');
 
