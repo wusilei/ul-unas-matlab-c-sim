@@ -925,17 +925,17 @@ void gru_step_fp_q20(
     for (j=0;j<nHidden;j++){
         int64_t s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_R(i,j);
         int32_t ih_r=(int32_t)((s+(int64_t)round_ih)>>(-Qr1));
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*HH_R(k,j);
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_R(k,j);
         int32_t hh_r=(int32_t)((s+(int64_t)round_hh)>>(-Qr2));
         r_q20[j]=sigmoid_q20_to_q20(ih_r+hh_r+ih_bias[j]+hh_bias[j]);
 
         s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_Z(i,j);
         int32_t ih_z=(int32_t)((s+(int64_t)round_ih)>>(-Qr1));
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*HH_Z(k,j);
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_Z(k,j);
         int32_t hh_z=(int32_t)((s+(int64_t)round_hh)>>(-Qr2));
         z_q20[j]=sigmoid_q20_to_q20(ih_z+hh_z+ih_bias[j+nHidden]+hh_bias[j+nHidden]);
 
-        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)h_cache[k]*HH_N(k,j);
+        s=0;for(int k=0;k<nHidden;k++)s+=(int64_t)((h_cache[k]+16)>>5)*HH_N(k,j);
         ht_q20[j]=(int32_t)((s+(int64_t)round_hh)>>(-Qr2))+hh_bias[j+2*nHidden];
 
         s=0;for(int i=0;i<input_dim;i++)s+=(int64_t)x_t[i]*IH_N(i,j);
