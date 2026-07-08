@@ -4,13 +4,13 @@
 
 #include <stdint.h>
 
-#define SIGMOID_LUT_SIZE 1024
-#define TANH_LUT_SIZE 1024
+#define SIGMOID_LUT_SIZE 4096
+#define TANH_LUT_SIZE 4096
 #define LOG10_LUT_SIZE 512
 #define SIGMOID_LUT_X_MIN_Q20  -8388608     /* -8.0 * 2^20 */
 #define SIGMOID_LUT_X_MAX_Q20  8388608      /*  8.0 * 2^20 */
-#define TANH_LUT_X_MIN_Q20     -8388608     /* -8.0 * 2^20 */
-#define TANH_LUT_X_MAX_Q20     8388608      /*  8.0 * 2^20 */
+#define TANH_LUT_X_MIN_Q20     -4194304     /* -4.0 * 2^20 */
+#define TANH_LUT_X_MAX_Q20     4194304      /*  4.0 * 2^20 */
 #define LOG10_LUT_X_MIN_Q20    1
 #define LOG10_LUT_X_MAX_Q20    8388608
 

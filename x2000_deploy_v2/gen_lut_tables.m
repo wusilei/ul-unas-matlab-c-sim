@@ -5,8 +5,8 @@
 clear; clc;
 
 %% Config
-SIGMOID_LUT_SIZE = 1024;
-TANH_LUT_SIZE    = 1024;
+SIGMOID_LUT_SIZE = 4096;
+TANH_LUT_SIZE    = 4096;
 LOG10_LUT_SIZE   = 512;
 
 out_dir = fileparts(mfilename('fullpath'));
@@ -31,8 +31,8 @@ sigmoid_lut_q15 = uint16(max(0, min(65535, sigmoid_lut_q15)));
 %% ====================================================================== %
 %% 2. Tanh LUT: int32_t Q20 → int16_t Q15
 %% ====================================================================== %
-x_min = -8;
-x_max =  8;
+x_min = -4;
+x_max =  4;
 x_step = (x_max - x_min) / (TANH_LUT_SIZE - 1);
 
 tanh_lut_q15 = zeros(1, TANH_LUT_SIZE);
