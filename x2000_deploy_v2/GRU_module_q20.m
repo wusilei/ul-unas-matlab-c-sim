@@ -44,6 +44,6 @@ n_t = Fix_point(n_t_dq, 's32f20');  % Q20 tanh
 
 % Update hidden state ----------------------------------------------- %
 h_cache = round( (1048576-z_t).*n_t*2^(-20) ) + round( z_t.*h_cache*2^(-20) );
-y = h_cache;  % Q20 output
+y = Fix_point(h_cache * 2^(-20), 's16f15');  % Q20->Q15 out (match C code)
 
 end
