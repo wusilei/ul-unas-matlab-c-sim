@@ -166,6 +166,27 @@ int main(int argc, char **argv) {
         free(gb);free(gr2);free(gdec);
     }
 
+    /* ── Test 6b: Decoder with ALL golden inputs ── */
+    {
+        int32_t *gr2 = load_i32_t(P("frame001_rnn2.bin"),16,33,&n);
+        int32_t *ge4 = load_i32_t(P("frame001_e4.bin"),16,33,&n);
+        int32_t *ge3 = load_i32_t(P("frame001_e3.bin"),32,33,&n);
+        int32_t *ge2 = load_i32_t(P("frame001_e2.bin"),24,33,&n);
+        int32_t *ge1 = load_i32_t(P("frame001_e1.bin"),24,33,&n);
+        int32_t *ge0 = load_i32_t(P("frame001_e0.bin"),12,65,&n);
+        int32_t *gdec= load_i32_t(P("frame001_dec.bin"),1,129,&n);
+        if(gr2&&ge4&&ge3&&ge2&&ge1&&ge0&&gdec){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[129];
+            decoder_module(gr2,ge4,ge3,ge2,ge1,ge0,st.tfa_cache_d0,st.tfa_cache_d1,
+                st.conv_cache_d0,st.tfa_cache_d2,st.conv_cache_d1,st.tfa_cache_d3,
+                st.conv_cache_d2,st.tfa_cache_d4,c);
+            rep("6b. Decoder (all golden in)",cmp(c,gdec,129)); total++;
+            if(cmp(c,gdec,129).snr>130)passed++;
+        }
+        free(gr2);free(ge4);free(ge3);free(ge2);free(ge1);free(ge0);free(gdec);
+    }
+
     printf("\n=== %d/%d tests passed ===\n", passed, total);
     return (passed==total)?0:1;
 }
