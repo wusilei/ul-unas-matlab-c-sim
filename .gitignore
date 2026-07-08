@@ -1,8 +1,6 @@
 build/
 *.o
 *.a
-golden/
-diag_e0/
 test_*.c
 test_diag*
 test_aff*
