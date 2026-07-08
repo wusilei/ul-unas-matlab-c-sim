@@ -29,8 +29,9 @@ SRCS += ulunas_modules.c
 SRCS += ulunas_infer.c
 SRCS += ulunas_stft.c
 
-# Optional test program
+# Optional test programs
 TEST_SRCS = test_matlab_golden.c
+DIAG_SRCS = test_decoder_diag.c
 
 # ── Objects ──────────────────────────────────────────────────────────────
 OBJS      = $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))
@@ -75,6 +76,14 @@ $(BUILDDIR)/test_matlab_golden: $(OBJS) $(BUILDDIR)/test_matlab_golden.o
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -I$(SRCDIR) $^ $(LDFLAGS) -o $@
 
+diag: $(BUILDDIR)/test_decoder_diag
+	@echo "Running Decoder diagnostic..."
+	$(BUILDDIR)/test_decoder_diag
+
+$(BUILDDIR)/test_decoder_diag: $(OBJS) $(BUILDDIR)/test_decoder_diag.o
+	@mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -I$(SRCDIR) $^ $(LDFLAGS) -o $@
+
 # ── Dependencies ─────────────────────────────────────────────────────────
 $(BUILDDIR)/ulunas_fp.o:      ulunas_fp.h qr_config.h layer_dims.h ulunas_lut.h
 $(BUILDDIR)/ulunas_lut.o:     ulunas_lut.h
@@ -82,6 +91,7 @@ $(BUILDDIR)/ulunas_matlab_weights.o: ulunas_matlab_weights.h
 $(BUILDDIR)/ulunas_modules.o: ulunas_fp.h ulunas_matlab_weights.h qr_config.h layer_dims.h
 $(BUILDDIR)/ulunas_infer.o:   ulunas_fp.h ulunas_matlab_weights.h
 $(BUILDDIR)/test_matlab_golden.o: ulunas_fp.h
+$(BUILDDIR)/test_decoder_diag.o: ulunas_fp.h
 
 # ── Clean ────────────────────────────────────────────────────────────────
 clean:
