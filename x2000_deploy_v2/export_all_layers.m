@@ -101,17 +101,20 @@ for t = 1:total_frames_to_export
     [y_rnn2, inter_cache_1] = GDPRNN_module(y_rnn1, inter_cache_1, 1);
     export_binary(fullfile(golden_dir, [prefix '_rnn2.bin']), y_rnn2, 'int32');
 
-    %% Decoder
-    [y_dec, ...
-        tfa_cache_d0, ...
-        tfa_cache_d1, ...
-        conv_cache_d0, tfa_cache_d2, ...
-        conv_cache_d1, tfa_cache_d3, ...
-        conv_cache_d2, tfa_cache_d4] = Decoder_module(y_rnn2, y_e4, tfa_cache_d0, ...
-        y_e3, tfa_cache_d1, ...
-        y_e2, conv_cache_d0, tfa_cache_d2, ...
-        y_e1, conv_cache_d1, tfa_cache_d3, ...
-        y_e0, conv_cache_d2, tfa_cache_d4);
+    %% Decoder — call each layer individually for per-layer golden export
+    [y_d0, tfa_cache_d0] = De_XDWS0_module(y_rnn2, y_e4, tfa_cache_d0);
+    export_binary(fullfile(golden_dir, [prefix '_d0.bin']), y_d0, 'int32');
+
+    [y_d1, tfa_cache_d1] = De_XMB0_module(y_d0, y_e3, tfa_cache_d1);
+    export_binary(fullfile(golden_dir, [prefix '_d1.bin']), y_d1, 'int32');
+
+    [y_d2, conv_cache_d0, tfa_cache_d2] = De_XDWS1_module(y_d1, y_e2, conv_cache_d0, tfa_cache_d2);
+    export_binary(fullfile(golden_dir, [prefix '_d2.bin']), y_d2, 'int32');
+
+    [y_d3, conv_cache_d1, tfa_cache_d3] = De_XMB1_module(y_d2, y_e1, conv_cache_d1, tfa_cache_d3);
+    export_binary(fullfile(golden_dir, [prefix '_d3.bin']), y_d3, 'int32');
+
+    [y_dec, conv_cache_d2, tfa_cache_d4] = De_XConv_module(y_d3, y_e0, conv_cache_d2, tfa_cache_d4);
 
     export_binary(fullfile(golden_dir, [prefix '_dec.bin']), y_dec, 'int32');
 

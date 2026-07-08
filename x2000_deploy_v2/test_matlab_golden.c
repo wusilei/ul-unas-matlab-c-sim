@@ -247,6 +247,113 @@ int main(int argc, char **argv) {
         free(gr2);free(ge4);free(ge3);free(ge2);free(ge1);free(ge0);free(gdec);
     }
 
+    /* ── Test 7: Decoder cascade self-consistency ── */
+    {
+        int32_t *gr2 = load_i32_t(P("frame001_rnn2.bin"),16,33,&n);
+        int32_t *ge4 = load_i32_t(P("frame001_e4.bin"),16,33,&n);
+        int32_t *ge3 = load_i32_t(P("frame001_e3.bin"),32,33,&n);
+        int32_t *ge2 = load_i32_t(P("frame001_e2.bin"),24,33,&n);
+        int32_t *ge1 = load_i32_t(P("frame001_e1.bin"),24,33,&n);
+        int32_t *ge0 = load_i32_t(P("frame001_e0.bin"),12,65,&n);
+        if(gr2&&ge4&&ge3&&ge2&&ge1&&ge0){
+            /* Run full decoder_module as reference */
+            ulunas_state_t st_ref; ulunas_state_init(&st_ref);
+            int32_t ref[129];
+            decoder_module(gr2,ge4,ge3,ge2,ge1,ge0,st_ref.tfa_cache_d0,st_ref.tfa_cache_d1,
+                st_ref.conv_cache_d0,st_ref.tfa_cache_d2,st_ref.conv_cache_d1,st_ref.tfa_cache_d3,
+                st_ref.conv_cache_d2,st_ref.tfa_cache_d4,ref);
+
+            /* Run manual cascade D0→D1→D2→D3→D4 */
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t y_d0[1056], y_d1[792], y_d2[792], y_d3[780], y_cas[129];
+
+            test_d0_xdws0(gr2, ge4, st.tfa_cache_d0, y_d0);
+            test_d1_xmb0(y_d0, ge3, st.tfa_cache_d1, y_d1);
+            test_d2_xdws1(y_d1, ge2, st.conv_cache_d0, st.tfa_cache_d2, y_d2);
+            test_d3_xmb1(y_d2, ge1, st.conv_cache_d1, st.tfa_cache_d3, y_d3);
+            test_d4_xconv(y_d3, ge0, st.conv_cache_d2, st.tfa_cache_d4, y_cas);
+
+            rep("7. Decoder cascade (D0→D4 manual)",cmp(y_cas,ref,129)); total++;
+            if(cmp(y_cas,ref,129).snr>130)passed++;
+        }
+        free(gr2);free(ge4);free(ge3);free(ge2);free(ge1);free(ge0);
+    }
+
+    /* ── Test 8a-8e: Decoder per-layer isolation (golden D0-D4) ── */
+    {
+        int32_t *gr2 = load_i32_t(P("frame001_rnn2.bin"),16,33,&n);
+        int32_t *ge4 = load_i32_t(P("frame001_e4.bin"),16,33,&n);
+        int32_t *ge3 = load_i32_t(P("frame001_e3.bin"),32,33,&n);
+        int32_t *ge2 = load_i32_t(P("frame001_e2.bin"),24,33,&n);
+        int32_t *ge1 = load_i32_t(P("frame001_e1.bin"),24,33,&n);
+        int32_t *ge0 = load_i32_t(P("frame001_e0.bin"),12,65,&n);
+
+        /* D0: [16,33]+skip_e4 → [32,33] */
+        int32_t *gd0 = load_i32_t(P("frame001_d0.bin"),32,33,&n);
+        if(gr2 && ge4 && gd0){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[1056];
+            test_d0_xdws0(gr2, ge4, st.tfa_cache_d0, c);
+            rep("8a.D0 iso (gold rnn2+skip_e4)",cmp(c,gd0,1056)); total++;
+            if(cmp(c,gd0,1056).snr>130)passed++;
+        } else { printf("  8a.D0 iso — golden MISS, skip\n"); }
+        free(gd0);
+
+        /* D1: [32,33]+skip_e3 → [24,33] */
+        int32_t *gd1 = load_i32_t(P("frame001_d1.bin"),24,33,&n);
+        int32_t *gd0_in = gd0 ? gd0 : load_i32_t(P("frame001_d0.bin"),32,33,&n);
+        if(gd0_in && ge3 && gd1){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[792];
+            test_d1_xmb0(gd0_in, ge3, st.tfa_cache_d1, c);
+            rep("8b.D1 iso (gold D0+skip_e3)",cmp(c,gd1,792)); total++;
+            if(cmp(c,gd1,792).snr>130)passed++;
+        } else { printf("  8b.D1 iso — golden MISS, skip\n"); }
+        if(!gd0) free(gd0_in);
+        free(gd1);
+
+        /* D2: [24,33]+skip_e2 → [24,33] */
+        int32_t *gd2 = load_i32_t(P("frame001_d2.bin"),24,33,&n);
+        int32_t *gd1_in = gd1 ? gd1 : load_i32_t(P("frame001_d1.bin"),24,33,&n);
+        if(gd1_in && ge2 && gd2){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[792];
+            test_d2_xdws1(gd1_in, ge2, st.conv_cache_d0, st.tfa_cache_d2, c);
+            rep("8c.D2 iso (gold D1+skip_e2)",cmp(c,gd2,792)); total++;
+            if(cmp(c,gd2,792).snr>130)passed++;
+        } else { printf("  8c.D2 iso — golden MISS, skip\n"); }
+        if(!gd1) free(gd1_in);
+        free(gd2);
+
+        /* D3: [24,33]+skip_e1 → [12,65] */
+        int32_t *gd3 = load_i32_t(P("frame001_d3.bin"),12,65,&n);
+        int32_t *gd2_in = gd2 ? gd2 : load_i32_t(P("frame001_d2.bin"),24,33,&n);
+        if(gd2_in && ge1 && gd3){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[780];
+            test_d3_xmb1(gd2_in, ge1, st.conv_cache_d1, st.tfa_cache_d3, c);
+            rep("8d.D3 iso (gold D2+skip_e1)",cmp(c,gd3,780)); total++;
+            if(cmp(c,gd3,780).snr>130)passed++;
+        } else { printf("  8d.D3 iso — golden MISS, skip\n"); }
+        if(!gd2) free(gd2_in);
+        free(gd3);
+
+        /* D4: [12,65]+skip_e0 → [1,129] */
+        int32_t *gd4 = load_i32_t(P("frame001_d4.bin"),1,129,&n);
+        int32_t *gd3_in = gd3 ? gd3 : load_i32_t(P("frame001_d3.bin"),12,65,&n);
+        if(gd3_in && ge0 && gd4){
+            ulunas_state_t st; ulunas_state_init(&st);
+            int32_t c[129];
+            test_d4_xconv(gd3_in, ge0, st.conv_cache_d2, st.tfa_cache_d4, c);
+            rep("8e.D4 iso (gold D3+skip_e0)",cmp(c,gd4,129)); total++;
+            if(cmp(c,gd4,129).snr>130)passed++;
+        } else { printf("  8e.D4 iso — golden MISS, skip\n"); }
+        if(!gd3) free(gd3_in);
+        free(gd4);
+
+        free(gr2);free(ge4);free(ge3);free(ge2);free(ge1);free(ge0);
+    }
+
     printf("\n=== %d/%d tests passed ===\n", passed, total);
     return (passed==total)?0:1;
 }
