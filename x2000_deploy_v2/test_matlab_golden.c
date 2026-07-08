@@ -74,6 +74,11 @@ extern void test_e1_xmb0(const int32_t*,int32_t*,int32_t*,int32_t*);
 extern void test_e2_xdws0(const int32_t*,int32_t*,int32_t*,int32_t*);
 extern void e3_xmb1_wrap(const int32_t*,int32_t*,int32_t*);
 extern void e4_xdws1_wrap(const int32_t*,int32_t*,int32_t*);
+extern void test_d0_xdws0(const int32_t*,const int32_t*,int32_t*,int32_t*);
+extern void test_d1_xmb0(const int32_t*,const int32_t*,int32_t*,int32_t*);
+extern void test_d2_xdws1(const int32_t*,const int32_t*,int32_t*,int32_t*,int32_t*);
+extern void test_d3_xmb1(const int32_t*,const int32_t*,int32_t*,int32_t*,int32_t*);
+extern void test_d4_xconv(const int32_t*,const int32_t*,int32_t*,int32_t*,int32_t*);
 extern const uint16_t erb_erb_fc_weight[], erb_ierb_fc_weight[];
 
 int main(int argc, char **argv) {

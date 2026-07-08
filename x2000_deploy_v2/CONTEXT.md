@@ -33,7 +33,7 @@ VM 无网络，文件通过共享文件夹同步。`git pull` 不可用，直接
 
 ### 编译: ✅ PC (gcc) 零错误
 
-### 已修复 Bug 清单 (7个，本 session)
+### 已修复 Bug 清单 (8个，本 session + MATLAB)
 
 | # | 文件 | Bug | 修复 |
 |---|------|-----|------|
@@ -44,8 +44,9 @@ VM 无网络，文件通过共享文件夹同步。`git pull` 不可用，直接
 | 15 | E1 pconv_g2_bn | BN Qr1=-11→-14 (MATLAB 说 -14) | pconv_g2_bn Qr 修正 |
 | 16 | bn_fp | BN weight 声明为 int16_t 但有值 >32767 (33101→-32435) | weight 改为 const uint16_t* |
 | 17 | gru_step_fp_q20 | HH MAC: h_cache 是 Q20 (32x)，HH weight 是 Q12，乘积溢出 | `(h+16)>>5` 转 Q15 再乘 |
+| 18 | export_all_layers.m | GRU_module_q20 输出 y=h_cache (Q20) 而 C 代码输出 (hn+16)>>5 (Q15) | MATLAB 改为 Fix_point(h_cache*2^(-20), 's16f15') |
 
-注: #1-7 是更早 session 修复的 (BN per-channel, conv cache, Qr, Decoder layers, ASAN 等)，详见 git log。
+注: #1-7 是更早 session 修复的 (BN per-channel, conv cache, Qr, Decoder layers, ASAN 等)，详见 git log。 #18 是 MATLAB 端修复 (commit e580fee)。
 
 ### Q20 GRU 升级 (已完成)
 
@@ -56,25 +57,25 @@ Q15→Q20 GRU 隐态升级要点:
 - 输出: Q20→Q15 转回 (`(hn+16)>>5`)，保持向后兼容
 - **关键**: HH MAC 必须先 `(h+16)>>5` 转 Q15 再和 HH weight (Q12) 相乘
 
-### 当前 Golden SNR 状态 (Q20 GRU v3 vs Q15 binary golden)
+### 当前 Golden SNR 状态 (Q20 GRU C vs Q20 GRU MATLAB golden, e580fee)
 
 ```
 BM:                        146.83 dB ✓  非 GRU, 完美
 ────────────────────────────────────────────────
-E0 XConv  (独立, nH=24):   71.78 dB △  Q20 vs Q15 参考
+E0 XConv  (独立, nH=24):   71.67 dB △  LUT vs float sigmoid/tanh 天花板
 E1 iso    (gold E0, nH=48):  8.93 dB △  GRU 越大发散越多
 E2 iso    (gold E1, nH=48):  7.99 dB △
 E3 iso    (gold E2, nH=64):  8.61 dB △  最大 GRU
 E4 iso    (gold E3, nH=32): 14.73 dB △
 ────────────────────────────────────────────────
 Full Encoder E4:             1.76 dB △  5层级联
-DPRNN idx=0:                 1.18 dB ✗  待诊断
-DPRNN idx=1:                 4.92 dB ✗  待诊断
-Decoder (真实输入):         -1.29 dB △  误差传播
+DPRNN idx=0:                 1.81 dB ✗  待诊断
+DPRNN idx=1:                 5.28 dB ✗  待诊断
+Decoder (真实输入):         -4.66 dB △  误差传播
 Decoder (全golden输入):     14.91 dB △  纯 Decoder
 ```
 
-**关键认识**: SNR 与 GRU nHidden 强相关 — Q20 精度更高，与 Q15 参考的差异随 GRU 规模增大而累积。非 GRU 路径 (conv/bn/shuffle/ctfa_apply) 已验证完美 (999 dB with golden masks)。所有 "低 SNR" 都是 Q20→Q15 golden 参考不匹配，不是 C 代码 bug。
+**关键认识**: SNR 与 GRU nHidden 强相关 — Q20 GRU 使用 4096pt LUT (位运算索引)，MATLAB 使用 float sigmoid/tanh，精度差异随 GRU 规模增大而累积。非 GRU 路径 (conv/bn/shuffle/ctfa_apply) 已验证完美 (999 dB with golden masks)。Golden 已重生为 Q20 (MATLAB GRU_module_q20 输出 Fix_point Q15，与 C 代码 (hn+16)>>5 一致)，所有 SNR 与之前 Q15 golden 基线一致，确认 golden 生成正确。
 
 ### 已验证正确的组件
 
@@ -92,9 +93,9 @@ Decoder (全golden输入):     14.91 dB △  纯 Decoder
 
 | 优先级 | 任务 | 说明 |
 |--------|------|------|
-| **P0** | MATLAB Q20 golden 重生 | 跑 `export_all_layers.m` + `diag_e0.m` + `diag_decoder.m`，让 golden 与 Q20 GRU 一致。预期 E0 71→90+ dB，E1-E4 8-15→70+ dB |
-| **P1** | Decoder 全链路验证 | Q20 golden 就绪后重跑 `make diag`，定位是否还有残留问题 |
-| **P2** | DPRNN 独立诊断 | idx=0 (1.18 dB) 和 idx=1 (4.92 dB) 需要子块级 SNR |
+| **P0** ✅ | MATLAB Q20 golden 重生 | 完成 (e580fee)。修复: GRU_module_q20 输出 y=h_cache(Q20)→Fix_point(Q15)。Golden 与 C 代码 Q20 GRU 一致，所有层 SNR 恢复到 Q15 golden 基线水平 |
+| **P1** | Decoder 全链路诊断 | `make diag` 逐子操作定位 Decoder 14.91 dB 瓶颈。怀疑 D4 De_XConv (nH=2 单通道) 或 GRU 精度差异 |
+| **P2** | DPRNN 独立诊断 | idx=0 (1.81 dB) 和 idx=1 (5.28 dB) 需要子块级 SNR |
 | **P3** | 端到端音频测试 | 所有层 >60 dB 后跑完整推理链，对比音频质量 |
 
 ---

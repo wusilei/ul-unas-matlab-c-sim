@@ -641,3 +641,20 @@ void e4_xdws1_wrap(const int32_t *x, int32_t *tc, int32_t *y) {
     e4_xdws1(x, tc, y);
 }
 
+/* ===== Decoder per-layer test wrappers ===== */
+void test_d0_xdws0(const int32_t *x, const int32_t *sk, int32_t *tc, int32_t *y) {
+    d0_xdws0(x, sk, (int16_t*)tc, y);
+}
+void test_d1_xmb0(const int32_t *x, const int32_t *sk, int32_t *tc, int32_t *y) {
+    d1_xmb0(x, sk, (int16_t*)tc, y);
+}
+void test_d2_xdws1(const int32_t *x, const int32_t *sk, int32_t *cc, int32_t *tc, int32_t *y) {
+    d2_xdws1(x, sk, cc, (int16_t*)tc, y);
+}
+void test_d3_xmb1(const int32_t *x, const int32_t *sk, int32_t *cc, int32_t *tc, int32_t *y) {
+    d3_xmb1(x, sk, cc, (int16_t*)tc, y);
+}
+void test_d4_xconv(const int32_t *x, const int32_t *sk, int32_t *cc, int32_t *tc, int32_t *y) {
+    d4_xconv(x, sk, cc, (int16_t*)tc, y);
+}
+
