@@ -206,10 +206,11 @@ void gconv2d_fp(
             x_chan[1 * W + kw] = x[nOut * W + kw];
         }
 
-        /* Convolve */
+        /* Convolve: weight is [Cout, 1, Kh, Kw] column-major.
+         * MATLAB: kernel_chan = squeeze(weight(nOut,1,:,:)) → [Kh,Kw]
+         * Access: weight(nOut,1,kh,kw) = nOut + Cout*(kh-1) + Cout*Kh*(kw-1) */
         int32_t acc[Hout * Wout];
         memset(acc, 0, sizeof(acc));
-        const int16_t *kernel = &weight[nOut * Kh * Kw]; /* [1, Kh, Kw] */
 
         for (h_id = 1; h_id <= Hout; h_id++) {
             int h_start = (h_id - 1) * stride_h + 1;
@@ -225,7 +226,8 @@ void gconv2d_fp(
                         if (h_src >= 1 && h_src <= H && w_src >= 1 && w_src <= W) {
                             x_val = x_chan[(h_src - 1) * W + (w_src - 1)];
                         }
-                        int16_t w_val = kernel[(kh - 1) * Kw + (kw - 1)];
+                        /* column-major: weight(nOut,1,kh,kw) */
+                        int16_t w_val = weight[nOut + Cout * (kh - 1) + Cout * Kh * (kw - 1)];
                         int64_t prod = (int64_t)x_val * (int64_t)w_val;
                         sum_val += (int32_t)((prod + (int64_t)round_const) >> (-Qr));
                     }
@@ -266,9 +268,9 @@ void non_gconv2d_fp(
 
     for (nOut = 0; nOut < Cout; nOut++) {
         const int32_t *x_chan = &x[nOut * W];
-        /* weight is [Cout, 1, Kh, Kw] → [Cout, Kw] since Kh=1 */
-        /* NOTE: MATLAB does kernel_chan = (squeeze(weight(nOut,1,:,:))).' → transpose! */
-        const int16_t *kernel = &weight[nOut * Kh * Kw]; /* [Kh, Kw] */
+        /* weight is [Cout, 1, 1, Kw] column-major.
+         * MATLAB: kernel_chan = squeeze(weight(nOut,1,:,:)).' → [Kw]
+         * Access: weight(nOut,1,1,kw) = nOut + Cout*(kw-1) [1-based] */
 
         int32_t acc[Hout * Wout];
         memset(acc, 0, sizeof(acc));
@@ -283,8 +285,8 @@ void non_gconv2d_fp(
                 if (w_src >= 1 && w_src <= W) {
                     x_val = x_chan[w_src - 1];
                 }
-                /* kernel is 1×Kw, transposed in MATLAB */
-                int16_t w_val = kernel[kw - 1];  /* row 0, col kw-1 */
+                /* column-major: weight(nOut,1,1,kw) */
+                int16_t w_val = weight[nOut + Cout * (kw - 1)];
                 int64_t prod = (int64_t)x_val * (int64_t)w_val;
                 sum_val += (int32_t)((prod + (int64_t)round_const) >> (-Qr));
             }
@@ -368,12 +370,14 @@ void tconv2d_fp(
             int pad_top = (Kh - H_ins) > 0 ? (Kh - H_ins) : 0;  /* pad top if needed */
 
             /* Kernel: rot90(kernel, 2) — 180° rotation
-             * weight indexed as [nIn, nOut, :, :] → [Cin, Cout, Kh, Kw] */
-            const int16_t *kernel = &weight[((nIn * Cout + nOut) * Kh) * Kw];
+             * weight is [Cin, Cout, Kh, Kw] column-major.
+             * MATLAB: kernel_chan = rot90(squeeze(weight(nIn,nOut,:,:)), 2)
+             * Access: weight(nIn,nOut,kh,kw) = nIn + Cin*nOut + Cin*Cout*kh + Cin*Cout*Kh*kw */
+            int CinCout = Cin * Cout;
             int16_t kernel_rot[Kh * Kw];
             for (kh = 0; kh < Kh; kh++) {
                 for (kw = 0; kw < Kw; kw++) {
-                    kernel_rot[kh * Kw + kw] = kernel[(Kh-1-kh) * Kw + (Kw-1-kw)];
+                    kernel_rot[kh * Kw + kw] = weight[nIn + Cin * nOut + CinCout * (Kh-1-kh) + CinCout * Kh * (Kw-1-kw)];
                 }
             }
 
@@ -449,11 +453,13 @@ void gtconv2d_fp(
             for (w_id = 0; w_id < W; w_id++)
                 x_insert[h_id * stride_h * W_ins + w_id * stride_w] = x_chan[h_id * W + w_id];
 
-        const int16_t *kernel = &weight[nOut * Kh * Kw];  /* [1, Kh, Kw] */
+        /* weight is [Cout, 1, Kh, Kw] column-major.
+         * Build rotated kernel: rot90(kernel,2) = 180° rotation */
         int16_t kernel_rot[Kh * Kw];
         for (kh = 0; kh < Kh; kh++)
             for (kw = 0; kw < Kw; kw++)
-                kernel_rot[kh * Kw + kw] = kernel[(Kh-1-kh) * Kw + (Kw-1-kw)];
+                /* column-major: weight(nOut,1,Kh-1-kh,Kw-1-kw) */
+                kernel_rot[kh * Kw + kw] = weight[nOut + Cout * (Kh-1-kh) + Cout * Kh * (Kw-1-kw)];
 
         int pad_left = 1;
         int32_t conv_result[Hout * Wout];
@@ -511,15 +517,15 @@ void non_gtconv2d_fp(
         for (w_id = 0; w_id < W; w_id++)
             x_insert[w_id * stride_w] = x_chan[w_id];
 
-        /* Kernel: weight is [Cout, 1, Kh, Kw], transpose then rot90 */
-        const int16_t *kernel = &weight[nOut * Kh * Kw]; /* [1, Kh, Kw] */
-        /* MATLAB: kernel = (squeeze(weight(nOut,1,:,:))).' → transpose
-         *         kernel_chan = rot90(kernel, 90) → 90° CCW */
+        /* weight is [Cout, 1, Kh, Kw] column-major.
+         * MATLAB: kernel = squeeze(weight(nOut,1,:,:)).'  → transpose → [Kw, Kh]
+         *         kernel_rot = rot90(kernel, 90) → 90° CCW
+         * Column-major: weight(nOut,1,kh,kw) = nOut + Cout*kh + Cout*Kh*kw */
         int16_t kt[Kh * Kw]; /* transposed: [Kw, Kh] */
         for (kh = 0; kh < Kh; kh++)
             for (kw = 0; kw < Kw; kw++)
-                kt[kw * Kh + kh] = kernel[kh * Kw + kw];
-        /* rot90: new[i][j] = old[j][N-1-i] for 90° CCW */
+                kt[kw * Kh + kh] = weight[nOut + Cout * kh + Cout * Kh * kw];
+        /* rot90: new[i][j] = old[j][N-1-i] for 90° CCW, old is [Kw, Kh] */
         int16_t krot[Kh * Kw];
         for (kh = 0; kh < Kh; kh++)
             for (kw = 0; kw < Kw; kw++)
@@ -723,7 +729,7 @@ void gru_step_fp(
     #define HH_Z_W(i, j)  hh_weight[(i) + ((j) + nHidden) * nHidden]
     #define HH_N_W(i, j)  hh_weight[(i) + ((j) + 2*nHidden) * nHidden]
 
-    int16_t r_t_q15[64], z_t_q15[64];  /* max nHidden=64 for E3 TA GRU */
+    uint16_t r_t_q15[64], z_t_q15[64];  /* max nHidden=64; MUST be unsigned: sigmoid returns u16f15 (0-32768) */
     int32_t h_t_q20[64];
     int16_t n_t_q15[64];
 
@@ -744,7 +750,7 @@ void gru_step_fp(
         int32_t r_t_q20 = ih_r + hh_r
             + ih_bias[j]              /* ih_r_bias */
             + hh_bias[j];             /* hh_r_bias */
-        r_t_q15[j] = (int16_t)sigmoid_q20_to_q15(r_t_q20);
+        r_t_q15[j] = sigmoid_q20_to_q15(r_t_q20);
 
         /* ── Update gate Z ── */
         int64_t ih_z_sum = 0;
@@ -762,7 +768,7 @@ void gru_step_fp(
         int32_t z_t_q20 = ih_z + hh_z
             + ih_bias[j + nHidden]    /* ih_z_bias */
             + hh_bias[j + nHidden];   /* hh_z_bias */
-        z_t_q15[j] = (int16_t)sigmoid_q20_to_q15(z_t_q20);
+        z_t_q15[j] = sigmoid_q20_to_q15(z_t_q20);
 
         /* ── Candidate hidden state N ── */
         /* h_t = round(h*hh_n_w*2^(Qr2)) + hh_n_b */
