@@ -566,7 +566,7 @@ void non_gtconv2d_fp(
  */
 void bn_fp(
     const int32_t *x, int C, int W,
-    const int16_t *weight, const int32_t *bias,
+    const uint16_t *weight, const int32_t *bias,
     const int32_t *running_mean, const uint16_t *running_var,
     int Qr1, int Qr2,
     int32_t *y)
@@ -586,7 +586,7 @@ void bn_fp(
         int64_t norm = diff * (int64_t)(uint32_t)running_var[c];
         int32_t x_norm = (int32_t)((norm + (int64_t)round1) >> (-Qr1));
 
-        int64_t scaled = (int64_t)x_norm * (int64_t)weight[c];
+        int64_t scaled = (int64_t)x_norm * (int64_t)(uint32_t)weight[c];
         int32_t y_val = (int32_t)((scaled + (int64_t)round2) >> (-Qr2));
         y[i] = y_val + bias[c];
     }

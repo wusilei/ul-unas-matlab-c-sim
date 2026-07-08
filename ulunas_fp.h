@@ -165,7 +165,7 @@ void non_gtconv2d_fp(
 /* Batch Normalization */
 void bn_fp(
     const int32_t *x, int C, int W,
-    const int16_t *weight, const int32_t *bias,
+    const uint16_t *weight, const int32_t *bias,
     const int32_t *running_mean, const uint16_t *running_var,
     int Qr1, int Qr2,
     int32_t *y);
