@@ -16,8 +16,8 @@ static void pconv_g2_aff(
 {
     int Co2 = Co*2, N = Co2*W;
     int32_t y0[Co*W], y1[Co*W];
-    pconv2d_fp(x, Ch, Co, W, pw, pb, cqr, y0);
-    pconv2d_fp(&x[Ch*W], Ch, Co, W, &pw[Co*Ch], &pb[Co*Ch], cqr, y1);
+    pconv2d_fp(x, Ch, Co, W, pw, pb, cqr, Co*2, y0);
+    pconv2d_fp(&x[Ch*W], Ch, Co, W, &pw[Co], &pb[Co], cqr, Co*2, y1);
     int32_t yc[Co2*W];
     for(int i=0;i<Co*W;i++){yc[i]=y0[i];yc[Co*W+i]=y1[i];}
     int32_t yb[Co2*W];
@@ -34,8 +34,8 @@ static void pconv_g2_bn(
 {
     int Co2=Co*2, N=Co2*W;
     int32_t y0[Co*W], y1[Co*W];
-    pconv2d_fp(x,Ch,Co,W,pw,pb,cqr,y0);
-    pconv2d_fp(&x[Ch*W],Ch,Co,W,&pw[Co*Ch],&pb[Co*Ch],cqr,y1);
+    pconv2d_fp(x,Ch,Co,W,pw,pb,cqr,Co*2,y0);
+    pconv2d_fp(&x[Ch*W],Ch,Co,W,&pw[Co],&pb[Co],cqr,Co*2,y1);
     int32_t yc[Co2*W];
     for(int i=0;i<Co*W;i++){yc[i]=y0[i];yc[Co*W+i]=y1[i];}
     bn_fp(yc,Co2,W,bw,bb,bm,bv,b1,b2,y);
@@ -269,7 +269,7 @@ static void e1_xmb0(const int32_t *x, int32_t *cc, int16_t *tc, int32_t *y) {
         encoder_en_convs_1_pconv2_0_weight,encoder_en_convs_1_pconv2_0_bias,
         encoder_en_convs_1_pconv2_1_weight,encoder_en_convs_1_pconv2_1_bias,
         encoder_en_convs_1_pconv2_1_running_mean,encoder_en_convs_1_pconv2_1_running_var,
-        -14,-11,-14,yp1);
+        -14,-14,-14,yp1);
     int32_t yc[24*33];
     ctfa(yp1,24,33,3,tc,48,4,24,
         encoder_en_convs_1_pconv2_2_ta_gru_weight_ih_l0,encoder_en_convs_1_pconv2_2_ta_gru_bias_ih_l0,
@@ -626,3 +626,4 @@ void encoder_xconv_module(
         encoder_en_convs_0_ops_4_fa_fc_weight,encoder_en_convs_0_ops_4_fa_fc_bias,fa);
     ctfa_apply_fp(ya,E0_OUT_C,E0_OUT_W,ta,fa,y);
 }
+

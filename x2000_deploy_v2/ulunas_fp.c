@@ -124,13 +124,13 @@ void conv2d_fp(
  *         y_chan = sum over nIn + bias
  *
  * x:      [Cin, W] in int32_t Q20
- * weight: [Cout, Cin] in int16_t (Q13/Q14) — actually [Cout, Cin, 1, 1]
- *              but for pconv2d, kernel_chan = squeeze(weight(nOut,nIn,:,:)) → scalar
+ * weight: [Cout_total, Cin] in int16_t, MATLAB column-major
+ *         wstride = stride between columns (typically Cout_total == Cout * nGroups)
  * y:      [Cout, W] in int32_t Q20
  */
 void pconv2d_fp(
     const int32_t *x, int Cin, int Cout, int Wout,
-    const int16_t *weight, const int32_t *bias, int Qr,
+    const int16_t *weight, const int32_t *bias, int Qr, int wstride,
     int32_t *y)
 {
     int nOut, nIn, w;
@@ -143,8 +143,8 @@ void pconv2d_fp(
         }
 
         for (nIn = 0; nIn < Cin; nIn++) {
-            /* Weight is [Cout, Cin] in MATLAB column-major: weight(nOut,nIn) → nOut + Cout*nIn */
-            int16_t w_val = weight[nOut + Cout * nIn];
+            /* Weight is [Cout_total, Cin] in MATLAB column-major: weight(nOut,nIn) → nOut + wstride*nIn */
+            int16_t w_val = weight[nOut + wstride * nIn];
             const int32_t *x_chan = &x[nIn * Wout]; /* [1, Wout] */
 
             for (w = 0; w < Wout; w++) {
