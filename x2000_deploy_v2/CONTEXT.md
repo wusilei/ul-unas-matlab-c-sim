@@ -24,11 +24,11 @@ make TARGET=x2000  # X2000 MIPS32R2
 https://github.com/wusilei/ul-unas-matlab-c-sim
 ```
 
-## 当前状态 (2026-07-08)
+## 当前状态 (2026-07-08 最终)
 
 ### 编译: ✅ PC + X2000 均零错误
 
-### 已修复 Bug 清单 (14个)
+### 已修复 Bug 清单 (16个)
 
 | # | 文件 | Bug | 修复 |
 |---|------|-----|------|
@@ -42,37 +42,55 @@ https://github.com/wusilei/ul-unas-matlab-c-sim
 | 8 | ctfa_fa_fp | FA reshape grp*nseg+seg 映射反向 | grp+ngrp*seg |
 | 9 | gru_step_fp | r_t/z_t int16_t 但sigmoid返uint16_t | 改为uint16_t |
 | 10 | gconv/tconv/gtconv/non_gconv/non_gtconv | 权重行优先→列优先 | 修正索引公式 |
-| 11 | pconv2d_fp | grouped conv权重stride=Cout但应为Cout*nGroups | 增加wstride参数 |
-| 12 | pconv_g2_aff | 组1权重offset=Co但layout为[Co,nGroups,Ch] | undo(回退) |
-| 13 | pconv_g2_bn | 同上 | undo(回退) |
-| 14 | — | pconv wstride参数 | 添加wstride=Co*2 |
+| 11 | pconv2d_fp | grouped conv权重stride=Cout→Co*nGroups | 增加wstride参数 |
+| 12-13 | pconv_g2_aff/bn | 组1 offset Co→Co*Ch回退 | layout [Co,nGroups,Ch] 非 [Co,Ch,nGroups] |
+| 14 | pconv2d_fp | wstride参数 | 添加wstride=Co*2 |
+| 15 | E1 pconv_g2_bn | BN Qr1=-11→-14 (MATLAB说-14) | E1 XMB0 PConv_block_1 修正 |
+| 16 | bn_fp | BN weight声明为int16_t但有值>32767 | weight改为const uint16_t* |
 
-注: Bug 12-13 的 offset 修复(Co→Co*Ch)被回退，因为权重 layout 是 [Co, nGroups, Ch] 而非 [Co, Ch, nGroups]。当前的 wstride 修复(Co→Co*2)是正确的。
+注: Bug 16 — D1 pconv BN weight[19]=33101, E1 pconv BN weight[13]=47668; int16_t读取→符号扩展→符号翻转
 
 ### 当前 Golden SNR 状态
 
-| Test | SNR (before) | SNR (after fixes) | 变化 |
-|------|-------------|-------------------|------|
-| BM | 146.83 dB | 146.83 dB | — |
-| E0 XConv | -2.71 dB | **70.98 dB** | +73.7 dB |
-| Full Encoder (E4) | -36.68 dB | -12.36 dB | +24.3 dB |
-| DPRNN idx=0 | -27.38 dB | -5.78 dB | +21.6 dB |
-| DPRNN idx=1 | 5.21 dB | 5.28 dB | +0.07 dB |
-| Decoder (D0→D4) | -0.19 dB | -9.82 dB | -9.6 dB |
+| Test | SNR | 说明 |
+|------|-----|------|
+| BM | 146.83 dB | ✓ |
+| E0 XConv (独立) | 70.98 dB | △ GRU LUT 精度瓶颈 |
+| Full Encoder E4 | 1.76 dB | △ 5层级联累积 |
+| DPRNN idx=0 | 1.81 dB | △ 依赖Encoder输出 |
+| DPRNN idx=1 | 5.28 dB | △ |
+| Decoder (真实输入) | -4.66 dB | ✗ 误差传播 |
+| Decoder (全golden输入) | 14.91 dB | △ 纯Decoder问题 |
 
-### 关键发现
+### 剩余瓶颈: GRU/BiGRU 精度 (Bug 17)
 
-1. **E0 cTFA 用 golden TA+FA masks = 999 dB** — ctfa_apply 和所有非GRU组件完美
-2. **E0 cTFA 用 C 计算的 TA+FA masks = 70.98 dB** — GRU/BiGRU 有小误差(1-2 LSB)
-3. **E1 用 golden E0 作输入仍有 -14.80 dB** — **E1 内部有结构性 bug，不是误差累积**
-4. **E2 用 golden E1 作输入达 7.99 dB** — E2 相对健壮，E1 特有操作有问题
-5. E1 vs E2 关键差异: E1 用 stride_w=2 gconv + pconv_g2_bn + final shuffle; E2 用 stride_w=1 gconv 无 pconv_g2_bn
+**E0 诊断**: 用 golden TA+FA masks = **999 dB** (ctfa_apply完美)。用 C 计算的 TA+FA = **70.98 dB** → 差在 GRU 隐态。
 
-### 待解决
+**根因定位**: tanh LUT 范围不足
+- sigmoid LUT: [-8, 8], 1024 pts, step≈0.0156 → 全覆盖
+- **tanh LUT: [-4, 4], 1024 pts, step≈0.0078 → 漏了 [-8,-4) 和 (4,8]**
+- tanh(-4) = -32747 (Q15), tanh(-5.787) = -32767 — 但 LUT 把 <-4 全饱和到 -32768
+- GRU 中 n_t 可达 -5.787 (Q20), tanh 输出差 2 LSB → 隐态更新累积
 
-- **E1 定位**: E1 是主要的 SNR 瓶颈。需逐子操作诊断 E1(pconv_g2_aff → shuffle → gconv(stride=2) → pconv_g2_bn → ctfa → shuffle)
-- E3/E4 和 Decoder 在 E0/E1 修复后可能自然改善
-- DPRNN idx=1 (5.28 dB) 和 DPRNN idx=0 (-5.78 dB) 需要独立调试
+**修复**: 在 MATLAB 端运行 `gen_lut_tables.m`，将 tanh 范围扩展为 [-8, 8]（与 sigmoid 一致）。
+
+**长期方向**: Q15 隐态精度理论上限约 84 dB。要达到 130+ dB，需要将 GRU 隐态从 Q15→Q20 (int16→int32)，同步升级 sigmoid/tanh LUT 到 Q20。
+
+### 诊断工具
+
+| 工具 | 用途 |
+|------|------|
+| `diag_e0.m` + `diag_e0_ctfa.m` | E0 逐子操作导出到 diag_e0/ |
+| `diag_decoder.m` | D0-D4 逐子操作导出到 diag_decoder/ |
+| `test_matlab_golden.c` | 逐层 binary golden 比对 (make test) |
+| `test_decoder_diag.c` | 逐子操作 text golden 比对 (make diag) |
+
+### 下一步
+
+1. **MATLAB**: 运行 gen_lut_tables.m 重新生成 tanh LUT (范围[-8,8])
+2. **C**: 重新编译，跑 `make test` 和 `make diag`，确认 GRU 精度改善
+3. 如果 E0 > 80 dB: DPRNN/Decoder 可能自然改善 (依赖GRU的层很多)
+4. 长远: 评估 Q15→Q20 GRU 隐态升级的工程投入
 
 ---
 

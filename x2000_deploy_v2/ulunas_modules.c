@@ -10,7 +10,7 @@
 void pconv_g2_aff(
     const int32_t *x, int Ch, int Co, int W,
     const int16_t *pw, const int32_t *pb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     const int16_t *aw, const int32_t *ab, const int16_t *as,
     int cqr, int b1, int b2, int a1, int a2, int32_t *y)
 {
@@ -29,7 +29,7 @@ void pconv_g2_aff(
 void pconv_g2_bn(
     const int32_t *x, int Ch, int Co, int W,
     const int16_t *pw, const int32_t *pb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     int cqr, int b1, int b2, int32_t *y)
 {
     int Co2=Co*2, N=Co2*W;
@@ -46,7 +46,7 @@ void gconv_aff(
     const int32_t *x, const int32_t *cc, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     const int16_t *aw, const int32_t *ab, const int16_t *as,
     int cqr, int b1, int b2, int a1, int a2, int32_t *y, int32_t *cn)
 {
@@ -62,7 +62,7 @@ void ngconv_aff(
     const int32_t *x, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     const int16_t *aw, const int32_t *ab, const int16_t *as,
     int cqr, int b1, int b2, int a1, int a2, int32_t *y)
 {
@@ -78,7 +78,7 @@ void gtconv_aff(
     const int32_t *x, const int32_t *cc, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     const int16_t *aw, const int32_t *ab, const int16_t *as,
     int cqr, int b1, int b2, int a1, int a2, int32_t *y, int32_t *cn)
 {
@@ -94,7 +94,7 @@ void ngtconv_aff(
     const int32_t *x, int C, int Wo,
     int Kh, int Kw, int sh, int sw,
     const int16_t *cw, const int32_t *cb,
-    const int16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
+    const uint16_t *bw, const int32_t *bb, const int32_t *bm, const uint16_t *bv,
     const int16_t *aw, const int32_t *ab, const int16_t *as,
     int cqr, int b1, int b2, int a1, int a2, int32_t *y)
 {
