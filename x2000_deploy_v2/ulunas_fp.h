@@ -51,11 +51,6 @@ static inline int32_t sat_s32(int64_t x) {
     if (x < -2147483648LL) return -2147483648;
     return (int32_t)x;
 }
-static inline int32_t sat_s20(int64_t x) {
-    if (x >  1073741824LL) return  1073741824;  /* 1024 * 2^20 ≈ 2^30 */
-    if (x < -1073741824LL) return -1073741824;
-    return (int32_t)x;
-}
 static inline int16_t sat_s16(int32_t x) {
     if (x >  32767) return  32767;
     if (x < -32768) return -32768;
@@ -65,6 +60,11 @@ static inline uint16_t sat_u16(int32_t x) {
     if (x > 65535) return 65535;
     if (x < 0)     return 0;
     return (uint16_t)x;
+}
+static inline int32_t sat_s20(int64_t x) {
+    if (x >  1073741824LL) return  1073741824;
+    if (x < -1073741824LL) return -1073741824;
+    return (int32_t)x;
 }
 
 /* ======================================================================== */
@@ -192,26 +192,26 @@ void affineprelu_fp(
 
 /* ── RNN ───────────────────────────────────────────────────────────────── */
 
-/* Single-direction GRU Q20 (Q20 hidden, Q15 output for backward compat) */
-void gru_step_fp_q20(
+/* Single-direction GRU (one timestep) — Q15 legacy */
+void gru_step_fp(
     const int32_t *x_t, int input_dim,
-    int32_t *h_cache, int nHidden,
+    int16_t *h_cache, int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
-/* Multi-timestep unidirectional GRU Q20 */
-void gru_sequence_fp_q20(
+/* Multi-timestep unidirectional GRU — Q15 legacy */
+void gru_sequence_fp(
     const int32_t *x, int T, int input_dim,
-    int32_t *h_cache, int nHidden,
+    int16_t *h_cache, int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
-/* BiGRU Q20 over T timesteps */
-void bigru_sequence_fp_q20(
+/* BiGRU over T timesteps — Q15 legacy */
+void bigru_sequence_fp(
     const int32_t *x, int T, int input_dim,
     int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,
@@ -221,24 +221,24 @@ void bigru_sequence_fp_q20(
     int Qr1, int Qr2,
     int16_t *y_out);
 
-/* ── Q15 GRU (kept for attention mask sigmoid calls) ──────────────────── */
-void gru_step_fp(
+/* ── Q20 GRU (int32_t hidden state, int16_t output for backward compat) ── */
+void gru_step_fp_q20(
     const int32_t *x_t, int input_dim,
-    int16_t *h_cache, int nHidden,
+    int32_t *h_cache, int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
-void gru_sequence_fp(
+void gru_sequence_fp_q20(
     const int32_t *x, int T, int input_dim,
-    int16_t *h_cache, int nHidden,
+    int32_t *h_cache, int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,
     const int16_t *hh_weight, const int32_t *hh_bias,
     int Qr1, int Qr2,
     int16_t *y_out);
 
-void bigru_sequence_fp(
+void bigru_sequence_fp_q20(
     const int32_t *x, int T, int input_dim,
     int nHidden,
     const int16_t *ih_weight, const int32_t *ih_bias,

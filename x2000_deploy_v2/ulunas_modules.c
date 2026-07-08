@@ -137,7 +137,7 @@ void skip_add(const int32_t *a, const int32_t *b, int N, int32_t *y) {
 /* ======================================================================== */
 
 void encoder_xconv_module(
-    const int32_t *x, int32_t *conv_cache, int16_t *tfa_cache, int32_t *y);
+    const int32_t *x, int32_t *conv_cache, int32_t *tfa_cache, int32_t *y);
 
 /* ======================================================================== */
 /*  ENCODER LAYER 2: XDWS0  [24,33]→[24,33]                                 */
@@ -594,7 +594,7 @@ void gdprnn_module(
 
 /* Encoder Layer 0 — moved to top of file for dependencies */
 void encoder_xconv_module(
-    const int32_t *x, int32_t *conv_cache, int16_t *tfa_cache, int32_t *y)
+    const int32_t *x, int32_t *conv_cache, int32_t *tfa_cache, int32_t *y)
 {
     int32_t xc[3*129];
     for(int i=0;i<E0_CACHE_FRAMES*E0_IN_W;i++)xc[i]=conv_cache[i];
