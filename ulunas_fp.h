@@ -115,10 +115,12 @@ void conv2d_fp(
     const int16_t *weight, const int32_t *bias, int Qr,
     int32_t *y);
 
-/* Point-wise convolution (1×1) */
+/* Point-wise convolution (1×1)
+ * wstride = stride between input channels in the weight array.
+ *           For grouped conv with nGroups, wstride = Cout * nGroups. */
 void pconv2d_fp(
     const int32_t *x, int Cin, int Cout, int Wout,
-    const int16_t *weight, const int32_t *bias, int Qr,
+    const int16_t *weight, const int32_t *bias, int Qr, int wstride,
     int32_t *y);
 
 /* Grouped temporal conv (with cache, 2-row input concat) */
